@@ -6,7 +6,7 @@ import { ThemeToggle } from "../theme-toggle";
 
 export default function Navbar() {
   return (
-    <header className="bg-black text-foreground px-6 flex items-center justify-between h-[4rem]">
+    <header className="bg-background border-b text-foreground px-6 flex items-center justify-between h-[4rem]">
       <div className="flex items-center">
         <BotIcon className="h-6 w-6 mr-2" />
         <span className="text-lg font-bold">Chatbot</span>

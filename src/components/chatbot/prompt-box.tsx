@@ -6,12 +6,11 @@ import { Textarea } from "../ui/textarea";
 
 export default function PromptBox() {
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 p-4 border-t border-gray-200 dark:border-gray-700">
-      <div className="relative">
+    <div className="px-10 py-4">
+      <div className="relative bg-muted rounded-md overflow-hidden">
         <Textarea
-          className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100 pr-12 dark:border-gray-800"
+          className="w-full rounded-md py-3 focus:outline-none focus:ring-2 focus:ring-muted dark:focus:ring-muted px-4 bg-transparent"
           placeholder="Type your message..."
-          rows={1}
         />
         <Button
           className="absolute top-1/2 right-3 -translate-y-1/2 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"

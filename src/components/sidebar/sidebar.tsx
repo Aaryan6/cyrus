@@ -6,7 +6,7 @@ import ProfileMenu from "./profile-menu";
 
 export default function Sidebar() {
   return (
-    <div className="bg-muted p-6 w-64 border-r border-gray-800 grid place-content-between">
+    <div className="bg-muted p-6 w-64 border-r border-secondary grid place-content-between">
       <div className="space-y-6">
         <SearchBox />
         <ChatHistory />
