@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 
 import BG from "@/public/jinn.jpeg";
 import { useUser } from "@/hooks/use-user";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function SignInPage() {
   const supabase = createClient();
@@ -31,13 +32,22 @@ export default function SignInPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
   const [linkMessage, setLinkMessage] = useState<boolean>(false);
+  const queryClient = useQueryClient();
 
-  const handleLoginWithOAuth = (provider: "google") => {
-    supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: getURL() + `auth/callback`,
-      },
+  const handleLoginWithOAuth = async (provider: "google") => {
+    await supabase.auth
+      .signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: getURL() + `auth/callback`,
+        },
+      })
+      .then((res) => console.log(res))
+      .catch((error) => {
+        console.log("auth-error", error);
+      });
+    queryClient.refetchQueries({
+      queryKey: ["user"],
     });
   };
 
@@ -49,31 +59,32 @@ export default function SignInPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) {
-      if (error.status == 429) {
-        return toast.error("Something went wrong!", {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) {
+        console.log(error);
+        if (error.status == 429) {
+          return toast.error("Something went wrong!", {
+            position: "top-center",
+          });
+        }
+        return toast.error(error.message, {
           position: "top-center",
-          style: {
-            background: "orange",
-            color: "black",
-          },
         });
       }
-      return toast.error(error.message, {
-        position: "top-center",
-        style: {
-          background: "orange",
-          color: "black",
-        },
+      setLinkMessage(true);
+      queryClient.refetchQueries({
+        queryKey: ["user"],
       });
+      router.push("/");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
     }
-    setLinkMessage(true);
-    setLoading(false);
-    router.push("/");
   };
 
   if (user) return router.push("/");
@@ -111,7 +122,7 @@ export default function SignInPage() {
               <CardContent className="grid gap-4">
                 <div className="grid grid-cols-1 gap-6">
                   <Button
-                    onClick={() => handleLoginWithOAuth("google")}
+                    onClick={async () => await handleLoginWithOAuth("google")}
                     variant="outline"
                   >
                     <Icons.google className="mr-2 h-4 w-4" />

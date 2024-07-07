@@ -11,8 +11,8 @@ export const chats = pgTable("chats", {
 });
 
 export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  id: uuid("id").primaryKey().notNull(),
   email: text("email").unique().notNull(),
-  name: text("name"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  full_name: text("full_name"),
+  avatar_url: text("avatar_url"),
 });

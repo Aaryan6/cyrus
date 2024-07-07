@@ -14,5 +14,10 @@ export default defineConfig({
   verbose: true,
   dbCredentials: {
     url: process.env.DATABASE_URL!,
+    host: process.env.DATABASE_HOST!,
+    port: 5432,
+    database: "postgres",
+    user: process.env.DATABASE_USER!,
+    password: process.env.DATABASE_PASSWORD!,
   },
 });

@@ -7,10 +7,10 @@ CREATE TABLE IF NOT EXISTS "chats" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"email" text NOT NULL,
-	"name" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
+	"full_name" text,
+	"avatar_url" text,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint

@@ -24,12 +24,14 @@ import { useRouter } from "next/navigation";
 
 import BG from "@/public/jinn.jpeg";
 import { useUser } from "@/hooks/use-user";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function SignInPage() {
   const supabase = createClient();
   const { data: user } = useUser();
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleLoginWithOAuth = (provider: "google") => {
     supabase.auth.signInWithOAuth({
@@ -37,6 +39,9 @@ export default function SignInPage() {
       options: {
         redirectTo: getURL() + `auth/callback`,
       },
+    });
+    queryClient.refetchQueries({
+      queryKey: ["user"],
     });
   };
 
@@ -48,19 +53,26 @@ export default function SignInPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      toast.error(error.message, {
-        position: "top-center",
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      return;
+
+      if (error) {
+        toast.error(error.message, {
+          position: "top-center",
+        });
+        return;
+      }
+      setLoading(false);
+      queryClient.refetchQueries({
+        queryKey: ["user"],
+      });
+      router.push("/");
+    } catch (error) {
+      console.log(error);
     }
-    setLoading(false);
-    router.push("/");
   };
 
   if (user) return router.push("/");
