@@ -59,15 +59,27 @@ export default function SignInPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
+    if (!email || !password) {
+      return toast.error("Please fill in all fields", {
+        position: "top-center",
+      });
+    }
+
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            email,
+          },
+          emailRedirectTo: getURL() + `auth/confirm`,
+        },
       });
       if (error) {
         console.log(error);
         if (error.status == 429) {
-          return toast.error("Something went wrong!", {
+          return toast.error(error.message, {
             position: "top-center",
           });
         }
@@ -79,7 +91,6 @@ export default function SignInPage() {
       queryClient.refetchQueries({
         queryKey: ["user"],
       });
-      router.push("/");
     } catch (error) {
       console.log(error);
     } finally {

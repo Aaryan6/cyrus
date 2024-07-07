@@ -10,7 +10,9 @@ export default async function Navbar() {
   return (
     <header className="bg-background border-b text-foreground px-6 flex items-center justify-between h-[4rem]">
       <div className="flex items-center">
-        <span className="text-lg font-bold">Jinn.</span>
+        <Link href={"/"}>
+          <span className="text-lg font-bold">Jinn.</span>
+        </Link>
       </div>
       <div className="flex items-center space-x-4">
         {user ? (
