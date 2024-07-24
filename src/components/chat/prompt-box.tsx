@@ -1,45 +1,18 @@
 import { SendIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import { useActions, useUIState } from "ai/rsc";
-import { AI } from "@/actions/chat.actions";
-import { FormEvent, useState } from "react";
-import { nanoid } from "@/lib/utils";
-import { UserMessage } from "./user-message";
-import { useParams } from "next/navigation";
-import { toast } from "sonner";
 
-type Props = {};
+type Props = {
+  input: string;
+  handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+};
 
-export default function PromptBox({}: Props) {
-  const { submit } = useActions();
-  const [_, setMessages] = useUIState<typeof AI>();
-  const [inputValue, setInputValue] = useState("");
-  const params = useParams();
-
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("value", inputValue);
-    if (!inputValue) {
-      toast.error("Please enter a message");
-      return;
-    }
-
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      {
-        id: nanoid(),
-        display: <UserMessage message={inputValue} />,
-      },
-    ]);
-
-    const res = await submit(inputValue, params.id);
-
-    setMessages((currentMessages) => [...currentMessages, res as any]);
-
-    setInputValue("");
-  };
-
+export default function PromptBox({
+  input,
+  handleInputChange,
+  handleSubmit: onSubmit,
+}: Props) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -56,8 +29,8 @@ export default function PromptBox({}: Props) {
         <Textarea
           className="w-full resize-none rounded-md h-full focus:outline-none focus:ring-2 focus:ring-muted dark:focus:ring-muted px-4 bg-transparent"
           placeholder="Type your message..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          value={input}
+          onChange={handleInputChange}
           spellCheck={true}
           onKeyDown={handleKeyDown}
         />

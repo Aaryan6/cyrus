@@ -1,8 +1,8 @@
 import { embed, embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
 import db from "../supabase/db";
-import { cosineDistance, desc, gt, sql } from "drizzle-orm";
-import { embeddings } from "../supabase/schema";
+import { cosineDistance, desc, eq, gt, sql } from "drizzle-orm";
+import { embeddings, users } from "../supabase/schema";
 
 const embeddingModel = openai.embedding("text-embedding-ada-002");
 
@@ -33,8 +33,13 @@ export const generateEmbedding = async (value: string): Promise<number[]> => {
   return embedding;
 };
 
-export const findRelevantContent = async (userQuery: string) => {
-  console.log("findRelevantContent", userQuery);
+export const findRelevantContent = async ({
+  userQuery,
+  userId,
+}: {
+  userQuery: string;
+  userId: string;
+}) => {
   const userQueryEmbedded = await generateEmbedding(userQuery);
   const similarity = sql<number>`1 - (${cosineDistance(
     embeddings.embedding,
@@ -43,7 +48,7 @@ export const findRelevantContent = async (userQuery: string) => {
   const similarGuides = await db
     .select({ name: embeddings.content, similarity })
     .from(embeddings)
-    .where(gt(similarity, 0.5))
+    .where(sql`${gt(similarity, 0.5)} AND ${eq(embeddings.userId, userId)}`)
     .orderBy((t) => desc(t.similarity))
     .limit(4);
   return similarGuides;

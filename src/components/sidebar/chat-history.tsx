@@ -9,7 +9,6 @@ import { ScrollArea } from "../ui/scroll-area";
 
 export default function ChatHistory({ history }: { history: Chats[] }) {
   const pathname = usePathname();
-  console.log(history);
   return (
     <div className="space-y-4 flex flex-col">
       <div className="flex items-center justify-between">
@@ -24,7 +23,7 @@ export default function ChatHistory({ history }: { history: Chats[] }) {
             {history.map((chat: Chats, index: number) => {
               return (
                 <Link
-                  href={`/${pathname}/rag/${chat.id}`}
+                  href={`/${pathname}/${chat.id}`}
                   key={chat.id ?? index}
                   className="group flex items-center space-x-2 transition-all duration-300 p-2 rounded-lg bg-muted"
                 >

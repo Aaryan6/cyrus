@@ -11,17 +11,18 @@ import { embeddings as embeddingsTable } from "../supabase/schema";
 
 export const createResource = async (input: NewResourceParams) => {
   try {
-    const { content } = insertResourceSchema.parse(input);
+    const { content, userId } = insertResourceSchema.parse(input);
 
     const [resource] = await db
       .insert(resources)
-      .values({ content })
+      .values({ content, userId })
       .returning();
 
     const embeddings = await generateEmbeddings(content);
     await db.insert(embeddingsTable).values(
       embeddings.map((embedding) => ({
         resourceId: resource.id,
+        userId,
         ...embedding,
       }))
     );

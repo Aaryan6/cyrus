@@ -51,6 +51,7 @@ export const embeddings = pgTable(
       () => resources.id,
       { onDelete: "cascade" }
     ),
+    userId: uuid("user_id").references(() => users.id),
     content: text("content").notNull(),
     embedding: vector("embedding", { dimensions: 1536 }).notNull(),
   },
@@ -67,7 +68,7 @@ export const resources = pgTable("resources", {
     .primaryKey()
     .$defaultFn(() => nanoid()),
   content: text("content").notNull(),
-
+  userId: uuid("user_id").references(() => users.id),
   createdAt: timestamp("created_at")
     .notNull()
     .default(sql`now()`),

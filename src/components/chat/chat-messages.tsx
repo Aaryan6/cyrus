@@ -1,23 +1,19 @@
 import { cn } from "@/lib/utils";
-import { UIState } from "@/actions/chat.actions";
 import { useEffect, useRef } from "react";
+import { Message } from "ai";
+import { UserMessage } from "./user-message";
+import { StaticBotMessage } from "./bot-message";
 
 export interface ChatMessageProps {
-  messages: UIState;
-  aiState: any;
-  initialMessages: any[];
+  messages: Message[];
 }
 
-export function ChatMessage({
-  messages,
-  aiState,
-  initialMessages,
-}: ChatMessageProps) {
+export function ChatMessage({ messages }: ChatMessageProps) {
   const bottomScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomScrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, aiState?.messages, initialMessages]);
+  }, [messages]);
 
   return (
     <div
@@ -25,10 +21,16 @@ export function ChatMessage({
         "mb-4 flex-1 h-[calc(100vh-10rem)] flex flex-col gap-4 max-w-4xl mx-auto pt-10 overflow-y-auto"
       )}
     >
-      {messages.map((message, index: number) => {
+      {messages?.map((message, index: number) => {
         return (
           <div key={message.id ?? index}>
-            <div className="">{message.display}</div>
+            {message.role === "assistant" ? (
+              <StaticBotMessage message={message} />
+            ) : (
+              message.role === "user" && (
+                <UserMessage message={message.content} />
+              )
+            )}
           </div>
         );
       })}

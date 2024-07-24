@@ -27,14 +27,16 @@ export async function POST(req: Request) {
             .string()
             .describe("the content or resource to add to the knowledge base"),
         }),
-        execute: async ({ content }) => createResource({ content }),
+        execute: async ({ content }) =>
+          createResource({ content, userId: user?.id }),
       }),
       getInformation: tool({
         description: `Check the information from your knowledge base before giving the answer, called this function when user talk about him & ask for information.`,
         parameters: z.object({
           question: z.string().describe("the users question"),
         }),
-        execute: async ({ question }) => findRelevantContent(question),
+        execute: async ({ question }) =>
+          findRelevantContent({ userQuery: question, userId: user?.id }),
       }),
     },
     messages: convertToCoreMessages(messages),

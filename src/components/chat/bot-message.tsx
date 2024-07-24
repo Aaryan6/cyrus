@@ -1,4 +1,5 @@
 "use client";
+import { Message } from "ai";
 import { StreamableValue, useStreamableValue } from "ai/rsc";
 import { BotIcon } from "lucide-react";
 
@@ -28,10 +29,7 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
   );
 };
 
-export const StaticBotMessage: React.FC<{
-  message: string;
-}> = ({ message }) => {
-  if (!message) return;
+export const StaticBotMessage = ({ message }: { message: Message }) => {
   return (
     <div className="flex-1 relative w-full">
       <div className="flex w-full justify-start gap-x-2 max-w-4xl mx-auto h-full">
@@ -43,7 +41,13 @@ export const StaticBotMessage: React.FC<{
             "w-fit grid grid-cols-1 gap-2 border-2 font-medium text-sm leading-5 border-[#F0F6FA] text-[#5B8989] bg-[#F0F6FA] p-4 rounded-lg rounded-ss-none whitespace-pre-wrap"
           }
         >
-          {message}
+          {message.content.length > 0 ? (
+            message.content
+          ) : (
+            <span className="italic font-light">
+              {"calling tool: " + message?.toolInvocations?.[0].toolName}
+            </span>
+          )}
         </div>
       </div>
     </div>
