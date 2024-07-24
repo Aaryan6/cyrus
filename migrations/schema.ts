@@ -4,8 +4,8 @@ import {
   unique,
   pgEnum,
   uuid,
-  timestamp,
   text,
+  timestamp,
   jsonb,
 } from "drizzle-orm/pg-core";
 
@@ -46,35 +46,19 @@ export const key_type = pgEnum("key_type", [
   "secretstream",
   "stream_xchacha20",
 ]);
-export const action = pgEnum("action", [
-  "INSERT",
-  "UPDATE",
-  "DELETE",
-  "TRUNCATE",
-  "ERROR",
-]);
-export const equality_op = pgEnum("equality_op", [
-  "eq",
-  "neq",
-  "lt",
-  "lte",
-  "gt",
-  "gte",
-  "in",
-]);
 
 export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey().notNull(),
-    updated_at: timestamp("updated_at", {
-      withTimezone: true,
-      mode: "string",
-    }).defaultNow(),
     email: text("email"),
     username: text("username"),
     full_name: text("full_name"),
     avatar_url: text("avatar_url"),
+    updated_at: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "string",
+    }).defaultNow(),
   },
   (table) => {
     return {

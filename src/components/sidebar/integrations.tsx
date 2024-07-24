@@ -8,7 +8,7 @@ export default function Integrations() {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Integrations</h3>
+        <h3 className="text-lg font-medium">Features</h3>
         <Button
           className="hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
           size="icon"

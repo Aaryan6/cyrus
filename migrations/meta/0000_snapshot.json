@@ -1,66 +1,9 @@
 {
-  "id": "4d7696ab-8e1a-462d-ae09-313e92ddaf5a",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.chats": {
-      "name": "chats",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "payload": {
-          "name": "payload",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "chats_user_id_users_id_fk": {
-          "name": "chats_user_id_users_id_fk",
-          "tableFrom": "chats",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
     "public.users": {
       "name": "users",
       "schema": "",
@@ -70,13 +13,6 @@
           "type": "uuid",
           "primaryKey": true,
           "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "now()"
         },
         "email": {
           "name": "email",
@@ -101,19 +37,132 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "CURRENT_TIMESTAMP"
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "users_id_fkey": {
+          "name": "users_id_fkey",
+          "tableFrom": "users",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {
+        "users_email_key": {
+          "columns": [
+            "email"
+          ],
+          "nullsNotDistinct": false,
+          "name": "users_email_key"
+        },
+        "users_username_key": {
+          "columns": [
+            "username"
+          ],
+          "nullsNotDistinct": false,
+          "name": "users_username_key"
+        }
+      }
     }
   },
-  "enums": {},
+  "enums": {
+    "auth.aal_level": {
+      "name": "aal_level",
+      "values": [
+        "aal1",
+        "aal2",
+        "aal3"
+      ],
+      "schema": "auth"
+    },
+    "auth.code_challenge_method": {
+      "name": "code_challenge_method",
+      "values": [
+        "s256",
+        "plain"
+      ],
+      "schema": "auth"
+    },
+    "auth.factor_status": {
+      "name": "factor_status",
+      "values": [
+        "unverified",
+        "verified"
+      ],
+      "schema": "auth"
+    },
+    "auth.factor_type": {
+      "name": "factor_type",
+      "values": [
+        "totp",
+        "webauthn"
+      ],
+      "schema": "auth"
+    },
+    "auth.one_time_token_type": {
+      "name": "one_time_token_type",
+      "values": [
+        "confirmation_token",
+        "reauthentication_token",
+        "recovery_token",
+        "email_change_token_new",
+        "email_change_token_current",
+        "phone_change_token"
+      ],
+      "schema": "auth"
+    },
+    "pgsodium.key_status": {
+      "name": "key_status",
+      "values": [
+        "default",
+        "valid",
+        "invalid",
+        "expired"
+      ],
+      "schema": "pgsodium"
+    },
+    "pgsodium.key_type": {
+      "name": "key_type",
+      "values": [
+        "aead-ietf",
+        "aead-det",
+        "hmacsha512",
+        "hmacsha256",
+        "auth",
+        "shorthash",
+        "generichash",
+        "kdf",
+        "secretbox",
+        "secretstream",
+        "stream_xchacha20"
+      ],
+      "schema": "pgsodium"
+    }
+  },
   "schemas": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
     "tables": {}
   }
 }

@@ -11,7 +11,7 @@ export default function PersonalisePage({
   const router = useRouter();
   const createChat = () => {
     const id = nanoid();
-    router.push(`/${username}/${id}`);
+    router.push(`/${username}/rag/${id}`);
   };
   return (
     <div className="p-4">
