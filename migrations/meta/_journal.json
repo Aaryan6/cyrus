@@ -5,8 +5,29 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1720375382588,
-      "tag": "0000_abnormal_moonstone",
+      "when": 1720459603838,
+      "tag": "0000_polite_calypso",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1720460582403,
+      "tag": "0001_volatile_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1720462766094,
+      "tag": "0002_spooky_hairball",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1720462869900,
+      "tag": "0003_sparkling_chronomancer",
       "breakpoints": true
     }
   ]

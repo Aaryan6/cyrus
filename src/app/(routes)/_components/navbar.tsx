@@ -27,7 +27,7 @@ export default function Navbar() {
         >
           <SettingsIcon className="h-5 w-5" />
         </Button>
-        <ThemeToggle />
+        {/* <ThemeToggle /> */}
       </div>
     </header>
   );

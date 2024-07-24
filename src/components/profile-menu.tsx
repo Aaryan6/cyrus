@@ -27,7 +27,7 @@ export default function ProfileMenu() {
   };
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
+      <DropdownMenuTrigger className="focus:outline-0">
         <Avatar>
           <AvatarImage src={user?.avatar_url} />
           <AvatarFallback>

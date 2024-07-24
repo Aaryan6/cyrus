@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function Integrations() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Integrations</h3>
         <Button
@@ -24,20 +24,6 @@ export default function Integrations() {
         >
           <SlackIcon size={20} />
           <span>Slack</span>
-        </Link>
-        <Link
-          className="flex items-center space-x-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md p-2"
-          href="#"
-        >
-          <GithubIcon size={20} />
-          <span>GitHub</span>
-        </Link>
-        <Link
-          className="flex items-center space-x-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md p-2"
-          href="#"
-        >
-          <TrelloIcon size={20} />
-          <span>Trello</span>
         </Link>
       </div>
     </div>

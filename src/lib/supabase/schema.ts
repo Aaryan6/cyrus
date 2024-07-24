@@ -1,14 +1,20 @@
 import { jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-// export const chats = pgTable("chats", {
-//   id: uuid("id").defaultRandom().primaryKey().notNull(),
-//   userId: uuid("user_id")
-// .references(() => users.id)
-// .notNull(),
-//   payload: jsonb("payload"),
-//   createdAt: timestamp("created_at").defaultNow().notNull(),
-//   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-// });
+export const chats = pgTable("chats", {
+  id: text("id").primaryKey().notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  payload: jsonb("payload"),
+  createdAt: timestamp("created_at", {
+    withTimezone: true,
+    mode: "date",
+  }).defaultNow(),
+  updatedAt: timestamp("updated_at", {
+    withTimezone: true,
+    mode: "date",
+  }).defaultNow(),
+});
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().notNull(),

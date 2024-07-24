@@ -1,11 +1,21 @@
-import ChatList from "@/components/chatbot/chat-list";
-import PromptBox from "@/components/chatbot/prompt-box";
+"use client";
+import { Button } from "@/components/ui/button";
+import { nanoid } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
-export default async function PersonalisePage() {
+export default function PersonalisePage({
+  params: { username },
+}: {
+  params: { username: string };
+}) {
+  const router = useRouter();
+  const createChat = () => {
+    const id = nanoid();
+    router.push(`/${username}/${id}`);
+  };
   return (
-    <div className="flex-1 flex flex-col max-w-4xl mx-auto">
-      <ChatList />
-      <PromptBox />
+    <div className="p-4">
+      <Button onClick={createChat}>New Chat</Button>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 {
-  "id": "4d7696ab-8e1a-462d-ae09-313e92ddaf5a",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "5be71292-d43e-4969-af1e-d408a7a65238",
+  "prevId": "bb44ed2e-e667-4a39-96f0-04f8b0f2d38d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -10,10 +10,9 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
         "user_id": {
           "name": "user_id",
@@ -31,14 +30,14 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "now()"
         }
       },

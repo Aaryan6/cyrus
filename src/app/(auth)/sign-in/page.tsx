@@ -114,6 +114,7 @@ export default function SignInPage() {
                   <Button
                     onClick={() => handleLoginWithOAuth("google")}
                     variant="outline"
+                    type="button"
                   >
                     <Icons.google className="mr-2 h-4 w-4" />
                     Google
