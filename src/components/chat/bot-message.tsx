@@ -31,7 +31,7 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
 
 export const StaticBotMessage = ({ message }: { message: Message }) => {
   return (
-    <div className="flex-1 relative w-full">
+    <div className="flex-1 relative w-full max-w-[80%]">
       <div className="flex w-full justify-start gap-x-2 max-w-4xl mx-auto h-full">
         <div className="bg-foreground border border-primary w-10 h-10 rounded-full grid place-items-center">
           <BotIcon className="text-muted" />

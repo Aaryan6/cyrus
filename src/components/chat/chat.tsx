@@ -5,6 +5,7 @@ import { Message } from "ai";
 import { ChatMessage } from "./chat-messages";
 import PromptBox from "./prompt-box";
 import { useChat } from "ai/react";
+import { useRef, useState } from "react";
 
 type ChatProps = {
   chatId: string;
@@ -19,6 +20,9 @@ export function Chat({ chatId, initialMessages }: ChatProps) {
       chatId: chatId,
     },
   });
+
+  const [files, setFiles] = useState<FileList | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <ScrollArea className="h-full w-full flex flex-col">
       <ChatMessage messages={messages} />
@@ -26,6 +30,9 @@ export function Chat({ chatId, initialMessages }: ChatProps) {
         input={input}
         handleInputChange={handleInputChange}
         handleSubmit={handleSubmit}
+        files={files}
+        setFiles={setFiles}
+        fileInputRef={fileInputRef}
       />
     </ScrollArea>
   );

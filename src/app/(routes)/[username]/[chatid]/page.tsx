@@ -8,7 +8,7 @@ export default async function ChatPage({
 }) {
   const chats = await getChats(chatid);
   return (
-    <div className="flex-1 flex flex-col max-w-4xl mx-auto">
+    <div className="flex-1 flex flex-col">
       <Chat chatId={chatid} initialMessages={chats?.payload.messages || []} />
     </div>
   );
