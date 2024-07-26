@@ -38,6 +38,7 @@ export default function SignInPage() {
       provider,
       options: {
         redirectTo: getURL() + `auth/callback`,
+        scopes: "https://www.googleapis.com/auth/calendar",
       },
     });
     queryClient.refetchQueries({

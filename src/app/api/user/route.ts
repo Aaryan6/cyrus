@@ -9,11 +9,12 @@ export async function GET() {
     const supabase = createClient();
     const {
       data: { user },
+      error,
     } = await supabase.auth.getUser();
-    if (!user)
-      return NextResponse.json({ message: "User not found!" }, { status: 404 });
+    console.log("user", user);
+    if (!user) return NextResponse.json({ message: error }, { status: 404 });
     const res = await db.select().from(users).where(eq(users.id, user.id));
-    return NextResponse.json({ user: res }, { status: 200 });
+    return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error }, { status: 500 });
   }

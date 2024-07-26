@@ -23,7 +23,7 @@ export default function ProfileMenu() {
     queryClient.invalidateQueries({
       queryKey: ["user"],
     });
-    router.refresh();
+    router.push("/sign-in");
   };
   return (
     <DropdownMenu>

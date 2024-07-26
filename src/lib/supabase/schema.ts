@@ -39,6 +39,7 @@ export const users = pgTable("users", {
   username: text("username"),
   full_name: text("full_name"),
   avatar_url: text("avatar_url"),
+  provider_token: text("provider_token"),
 });
 
 export const embeddings = pgTable(

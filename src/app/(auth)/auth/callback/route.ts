@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import db from "@/lib/supabase/db";
+import { users } from "@/lib/supabase/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -28,7 +31,12 @@ export async function GET(request: Request) {
         },
       }
     );
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+    const res = await db
+      .update(users)
+      .set({ provider_token: data?.session?.provider_token })
+      .where(eq(users.id, data?.user?.id!))
+      .returning();
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }

@@ -29,7 +29,7 @@ export default function ChatHistory({ history }: { history: Chats[] }) {
             {history.map((chat: Chats, index: number) => {
               return (
                 <Link
-                  href={`/${pathname}/${chat.id}`}
+                  href={`/${username}/${chat.id}`}
                   key={chat.id ?? index}
                   className="group flex items-center space-x-2 transition-all duration-300 p-2 rounded-lg bg-muted"
                 >

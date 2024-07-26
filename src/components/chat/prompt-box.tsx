@@ -51,7 +51,7 @@ export default function PromptBox({
             fileInputRef.current.value = "";
           }
         }}
-        className="relative bg-muted rounded-md overflow-hidden h-20"
+        className="relative bg-muted rounded-md overflow-hidden h-[5rem]"
       >
         <Textarea
           className="w-full resize-none rounded-md h-full focus:outline-none focus:ring-2 focus:ring-muted dark:focus:ring-muted px-4 bg-transparent"

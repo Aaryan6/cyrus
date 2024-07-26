@@ -8,6 +8,7 @@ import { getUserInfo } from "@/actions/user.server";
 import db from "@/lib/supabase/db";
 import { chats } from "@/lib/supabase/schema";
 import { sql } from "drizzle-orm";
+import { addEventToCalendar } from "@/lib/actions/calendar";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -38,9 +39,39 @@ export async function POST(req: Request) {
         execute: async ({ question }) =>
           findRelevantContent({ userQuery: question, userId: user?.id }),
       }),
+      addEventToCalendar: tool({
+        description: `Add an event to the calendar, if the user provides any information about the event then use this tool with confirmation of user.`,
+        parameters: z.object({
+          description: z.string().describe("the description of the event"),
+          startTime: z.string().describe("the start time of the event"),
+          endTime: z.string().optional().describe("the end time of the event"),
+          summary: z.string().optional().describe("the summary of the event"),
+          location: z.string().optional().describe("the location of the event"),
+          attendees: z
+            .array(z.object({ email: z.string() }))
+            .optional()
+            .describe("the attendees of the event"),
+        }),
+        execute: async ({
+          description,
+          startTime,
+          attendees,
+          endTime,
+          location,
+          summary,
+        }) =>
+          await addEventToCalendar({
+            description,
+            startTime,
+            attendees,
+            endTime,
+            location,
+            summary,
+          }),
+      }),
     },
     messages: convertToCoreMessages(messages),
-    experimental_toolCallStreaming: true,
+    // experimental_toolCallStreaming: true,
     async onFinish(event) {
       const title = messages[0].content.substring(0, 100);
       const id = chatId ?? nanoid();

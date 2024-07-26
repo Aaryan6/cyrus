@@ -40,6 +40,7 @@ export default function SignInPage() {
         provider,
         options: {
           redirectTo: getURL() + `auth/callback`,
+          scopes: "https://www.googleapis.com/auth/calendar",
         },
       })
       .then((res) => console.log(res))
@@ -101,7 +102,7 @@ export default function SignInPage() {
   if (user) return router.push("/");
 
   return (
-    <div className="container relative hidden h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+    <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r ">
         <div className="bg-gradient-to-t from-black via-transparent to-transparent absolute top-0 left-0 w-full h-full z-20"></div>
         <div className="absolute inset-0 bg-zinc-900" />
