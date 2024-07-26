@@ -73,15 +73,12 @@ export async function POST(req: NextRequest) {
     );
 
     OAuth2Client.setCredentials({
-      access_token:
-        "ya29.a0AXooCgsbUgjahTwW-UpjLLK9PE_5euY4BNIhTFtr-u9eBfzVcKa-4D9bMzrQVDLYxvFQU2M5mZHO1FZPq1rJ9qkhwNiV63fnRb0rios8zZZ32gt2_2R75qrXhksO0w8k4998kOrhI3UIE_nhBoIk3PId0eZBTgHZSAaCgYKAboSARESFQHGX2MilpVqQIWb51OwtyQk8LmGbQ0169",
+      access_token: "",
       scope: SCOPES.join(" "),
     });
 
     // Manually check if token is expired
-    const tokenInfo = await OAuth2Client.getTokenInfo(
-      "ya29.a0AXooCgsbUgjahTwW-UpjLLK9PE_5euY4BNIhTFtr-u9eBfzVcKa-4D9bMzrQVDLYxvFQU2M5mZHO1FZPq1rJ9qkhwNiV63fnRb0rios8zZZ32gt2_2R75qrXhksO0w8k4998kOrhI3UIE_nhBoIk3PId0eZBTgHZSAaCgYKAboSARESFQHGX2MilpVqQIWb51OwtyQk8LmGbQ0169"
-    );
+    const tokenInfo = await OAuth2Client.getTokenInfo("");
     const isTokenExpired = tokenInfo.expiry_date! < Date.now();
 
     if (isTokenExpired) {
