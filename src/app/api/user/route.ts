@@ -1,4 +1,4 @@
-import db from "@/lib/supabase/db";
+import db from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { users } from "../../../../migrations/schema";

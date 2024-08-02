@@ -1,8 +1,8 @@
 import { embed, embedMany } from "ai";
 import { openai } from "@ai-sdk/openai";
-import db from "../supabase/db";
+import db from "../db";
 import { cosineDistance, desc, eq, gt, sql } from "drizzle-orm";
-import { embeddings, users } from "../supabase/schema";
+import { embeddings, users } from "../db/schema";
 
 const embeddingModel = openai.embedding("text-embedding-ada-002");
 

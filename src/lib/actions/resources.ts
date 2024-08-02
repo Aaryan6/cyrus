@@ -4,10 +4,10 @@ import {
   NewResourceParams,
   insertResourceSchema,
   resources,
-} from "@/lib/supabase/schema";
-import db from "../supabase/db";
+} from "@/lib/db/schema";
+import db from "../db";
 import { generateEmbeddings } from "../ai/embedding";
-import { embeddings as embeddingsTable } from "../supabase/schema";
+import { embeddings as embeddingsTable } from "../db/schema";
 
 export const createResource = async (input: NewResourceParams) => {
   try {

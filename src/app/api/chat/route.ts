@@ -12,8 +12,8 @@ import { z } from "zod";
 import { findRelevantContent } from "@/lib/ai/embedding";
 import { nanoid } from "@/lib/utils";
 import { getUserInfo } from "@/actions/user.server";
-import db from "@/lib/supabase/db";
-import { chats } from "@/lib/supabase/schema";
+import db from "@/lib/db";
+import { chats } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import {
   addEventToCalendar,

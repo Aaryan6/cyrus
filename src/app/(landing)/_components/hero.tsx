@@ -6,7 +6,7 @@ import { nanoid } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 type Props = {
-  user: UserInfo;
+  user: UserInfo | null;
 };
 export default function Hero({ user }: Props) {
   const router = useRouter();

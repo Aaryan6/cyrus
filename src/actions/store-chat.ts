@@ -2,8 +2,8 @@
 import { AIMessage } from "@/actions/chat.actions";
 import { getUserInfo } from "./user.server";
 import { nanoid } from "@/lib/utils";
-import db from "@/lib/supabase/db";
-import { chats } from "@/lib/supabase/schema";
+import db from "@/lib/db";
+import { chats } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 
 type StoreChats = {

@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 import { cn, getURL } from "@/lib/utils";
 
 import { Icons } from "@/components/icons";
@@ -27,7 +26,6 @@ import { useUser } from "@/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function SignInPage() {
-  const supabase = createClient();
   const { data: user } = useUser();
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
@@ -35,18 +33,6 @@ export default function SignInPage() {
   const queryClient = useQueryClient();
 
   const handleLoginWithOAuth = async (provider: "google") => {
-    await supabase.auth
-      .signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: getURL() + `auth/callback`,
-          scopes: "https://www.googleapis.com/auth/calendar",
-        },
-      })
-      .then((res) => console.log(res))
-      .catch((error) => {
-        console.log("auth-error", error);
-      });
     queryClient.refetchQueries({
       queryKey: ["user"],
     });
@@ -67,31 +53,6 @@ export default function SignInPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            email,
-          },
-          emailRedirectTo: getURL() + `auth/confirm`,
-        },
-      });
-      if (error) {
-        console.log(error);
-        if (error.status == 429) {
-          return toast.error(error.message, {
-            position: "top-center",
-          });
-        }
-        return toast.error(error.message, {
-          position: "top-center",
-        });
-      }
-      setLinkMessage(true);
-      queryClient.refetchQueries({
-        queryKey: ["user"],
-      });
     } catch (error) {
       console.log(error);
     } finally {

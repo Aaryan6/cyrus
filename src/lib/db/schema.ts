@@ -18,7 +18,7 @@ import type { AdapterAccount } from "next-auth/adapters";
 
 export const chats = pgTable("chats", {
   id: text("id").primaryKey().notNull(),
-  userId: uuid("user_id")
+  userId: text("user_id")
     .references(() => users.id)
     .notNull(),
   payload: jsonb("payload"),
@@ -33,8 +33,10 @@ export const chats = pgTable("chats", {
 });
 
 export const users = pgTable("users", {
-  id: uuid("id").primaryKey().notNull(),
-  updated_at: timestamp("updated_at", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  created_at: timestamp("updated_at", {
     withTimezone: true,
     mode: "string",
   }).defaultNow(),
@@ -42,13 +44,12 @@ export const users = pgTable("users", {
   username: text("username"),
   full_name: text("full_name"),
   avatar_url: text("avatar_url"),
-  provider_token: text("provider_token"),
 });
 
 export const accounts = pgTable(
   "account",
   {
-    userId: text("userId")
+    userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     type: text("type").$type<AdapterAccount>().notNull(),
@@ -79,7 +80,7 @@ export const embeddings = pgTable(
       () => resources.id,
       { onDelete: "cascade" }
     ),
-    userId: uuid("user_id").references(() => users.id),
+    userId: text("user_id").references(() => users.id),
     content: text("content").notNull(),
     embedding: vector("embedding", { dimensions: 1536 }).notNull(),
   },
@@ -96,7 +97,7 @@ export const resources = pgTable("resources", {
     .primaryKey()
     .$defaultFn(() => nanoid()),
   content: text("content").notNull(),
-  userId: uuid("user_id").references(() => users.id),
+  userId: text("user_id").references(() => users.id),
   createdAt: timestamp("created_at")
     .notNull()
     .default(sql`now()`),

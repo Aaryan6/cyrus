@@ -8,18 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 export default function ProfileMenu() {
   const { data: user } = useUser();
-  const supabase = createClient();
   const queryClient = useQueryClient();
   const router = useRouter();
 
   const logOut = async () => {
-    await supabase.auth.signOut();
     queryClient.invalidateQueries({
       queryKey: ["user"],
     });
@@ -28,14 +25,14 @@ export default function ProfileMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="focus:outline-0">
-        <Avatar>
+        {/* <Avatar>
           <AvatarImage src={user?.avatar_url} />
           <AvatarFallback>
             {user?.full_name
               ? user?.full_name?.charAt(0).toUpperCase()
               : user?.email?.charAt(0).toUpperCase()}
           </AvatarFallback>
-        </Avatar>
+        </Avatar> */}
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem

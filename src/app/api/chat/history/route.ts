@@ -1,4 +1,4 @@
-import db from "@/lib/supabase/db";
+import db from "@/lib/db";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";

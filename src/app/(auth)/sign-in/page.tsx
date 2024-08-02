@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 import { cn, getURL } from "@/lib/utils";
 
 import { Icons } from "@/components/icons";
@@ -27,20 +26,12 @@ import { useUser } from "@/hooks/use-user";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function SignInPage() {
-  const supabase = createClient();
   const { data: user } = useUser();
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
   const queryClient = useQueryClient();
 
   const handleLoginWithOAuth = (provider: "google") => {
-    supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: getURL() + `auth/callback`,
-        scopes: "https://www.googleapis.com/auth/calendar",
-      },
-    });
     queryClient.refetchQueries({
       queryKey: ["user"],
     });
@@ -55,22 +46,6 @@ export default function SignInPage() {
     const password = formData.get("password") as string;
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        toast.error(error.message, {
-          position: "top-center",
-        });
-        return;
-      }
-      setLoading(false);
-      queryClient.refetchQueries({
-        queryKey: ["user"],
-      });
-      router.push("/");
     } catch (error) {
       console.log(error);
     }

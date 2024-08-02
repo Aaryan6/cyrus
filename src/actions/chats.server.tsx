@@ -1,6 +1,6 @@
 "use server";
-import db from "@/lib/supabase/db";
-import { chats } from "@/lib/supabase/schema";
+import db from "@/lib/db";
+import { chats } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getUserInfo } from "./user.server";
 import { Chats } from "@/lib/types";
