@@ -1,6 +1,13 @@
 import { createResource } from "@/lib/actions/resources";
 import { openai } from "@ai-sdk/openai";
-import { convertToCoreMessages, streamText, tool } from "ai";
+import {
+  convertToCoreMessages,
+  generateObject,
+  generateText,
+  StreamData,
+  streamText,
+  tool,
+} from "ai";
 import { z } from "zod";
 import { findRelevantContent } from "@/lib/ai/embedding";
 import { nanoid } from "@/lib/utils";
@@ -8,7 +15,10 @@ import { getUserInfo } from "@/actions/user.server";
 import db from "@/lib/supabase/db";
 import { chats } from "@/lib/supabase/schema";
 import { sql } from "drizzle-orm";
-import { addEventToCalendar } from "@/lib/actions/calendar";
+import {
+  addEventToCalendar,
+  getEventsFromCalendar,
+} from "@/lib/actions/calendar";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -16,6 +26,27 @@ export const maxDuration = 30;
 export async function POST(req: Request) {
   const { messages, chatId } = await req.json();
   const user = await getUserInfo();
+
+  const data = new StreamData();
+
+  const {
+    object: { suggestions },
+  } = await generateObject({
+    model: openai("gpt-4o-mini"),
+    prompt: `generate 2 next possible questions for the user. user: ${
+      messages[messages.length - 1].content
+    }`,
+    schema: z.object({
+      suggestions: z.array(
+        z.object({
+          question: z.string(),
+        })
+      ),
+    }),
+  });
+
+  data.append(suggestions);
+  data.close();
 
   const result = await streamText({
     model: openai("gpt-4o-mini"),
@@ -69,9 +100,19 @@ export async function POST(req: Request) {
             summary,
           }),
       }),
+      getEventsFromCalendar: tool({
+        description: `Get events from the calendar, if the user wants to know about the events then use this tool.`,
+        parameters: z.object({
+          question: z.string().describe("the users question"),
+        }),
+        execute: async ({ question }) =>
+          await getEventsFromCalendar({
+            question,
+          }),
+      }),
     },
     messages: convertToCoreMessages(messages),
-    // experimental_toolCallStreaming: true,
+    experimental_toolCallStreaming: true,
     async onFinish(event) {
       const title = messages[0].content.substring(0, 100);
       const id = chatId ?? nanoid();
@@ -106,5 +147,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return result.toAIStreamResponse();
+  return result.toDataStreamResponse({ data });
 }

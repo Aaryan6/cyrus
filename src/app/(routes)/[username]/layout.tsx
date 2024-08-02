@@ -9,7 +9,7 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const { user } = await getUser();
-  const { session } = await getSession();
+  const session = await getSession();
   // console.log(session);
   // console.log(user);
   if (!user) redirect("/sign-in");

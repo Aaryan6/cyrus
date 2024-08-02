@@ -1,7 +1,9 @@
 import {
   index,
+  integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -12,6 +14,7 @@ import { nanoid } from "../utils";
 import { sql } from "drizzle-orm";
 import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import type { AdapterAccount } from "next-auth/adapters";
 
 export const chats = pgTable("chats", {
   id: text("id").primaryKey().notNull(),
@@ -41,6 +44,30 @@ export const users = pgTable("users", {
   avatar_url: text("avatar_url"),
   provider_token: text("provider_token"),
 });
+
+export const accounts = pgTable(
+  "account",
+  {
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").$type<AdapterAccount>().notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("providerAccountId").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (account) => ({
+    compoundKey: primaryKey({
+      columns: [account.provider, account.providerAccountId],
+    }),
+  })
+);
 
 export const embeddings = pgTable(
   "embeddings",

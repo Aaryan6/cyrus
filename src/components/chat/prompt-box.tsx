@@ -1,8 +1,12 @@
-import { Paperclip, SendIcon } from "lucide-react";
-import { Button } from "../ui/button";
+import { Paperclip, Plus, SendIcon } from "lucide-react";
+import { Button, buttonVariants } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { ChangeEvent, useEffect, useRef } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn, nanoid } from "@/lib/utils";
 
 type Props = {
   input: string;
@@ -24,6 +28,10 @@ export default function PromptBox({
   files,
   setFiles,
 }: Props) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pathname = usePathname();
+  const newId = nanoid();
+
   const handleKeyDown = (e: any) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -36,6 +44,23 @@ export default function PromptBox({
         fileInputRef.current.value = "";
       }
     }
+  };
+
+  const adjustHeight = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      return;
+    }
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    adjustHeight();
+  }, []);
+
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    adjustHeight();
   };
   return (
     <div className="px-10 py-4 absolute bottom-0 inset-x-0 w-full max-w-4xl mx-auto">
@@ -51,18 +76,40 @@ export default function PromptBox({
             fileInputRef.current.value = "";
           }
         }}
-        className="relative bg-muted rounded-md overflow-hidden h-[5rem]"
+        className="relative bg-muted rounded-md"
       >
         <Textarea
-          className="w-full resize-none rounded-md h-full focus:outline-none focus:ring-2 focus:ring-muted dark:focus:ring-muted px-4 bg-transparent"
+          className="w-full resize-none max-h-44 rounded-md focus:outline-none focus:ring-2 focus:ring-muted dark:focus:ring-muted px-4 bg-transparent focus-visible:ring-offset-0"
           placeholder="Type your message..."
           value={input}
-          onChange={handleInputChange}
+          onChange={(e) => {
+            handleInputChange(e);
+            handleChange(e);
+          }}
           spellCheck={true}
           onKeyDown={handleKeyDown}
+          ref={textareaRef}
+          data-gramm="false"
+          data-gramm_editor="false"
+          data-enable-grammarly="false"
         />
-        <div className="absolute bottom-4 left-4 flex items-center gap-2">
-          <Label htmlFor="file" className="cursor-pointer">
+        <div className="absolute bottom-0 rounded-lg -left-10 grid gap-1">
+          <Link
+            href={`/${pathname.split("/")[1]}/${newId}}`}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon" }),
+              "cursor-pointer w-8 h-8"
+            )}
+          >
+            <Plus size={18} />
+          </Link>
+          <Label
+            htmlFor="file"
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "icon" }),
+              "cursor-pointer w-8 h-8"
+            )}
+          >
             <Paperclip size={16} />
           </Label>
           <p>
@@ -90,7 +137,7 @@ export default function PromptBox({
           ref={fileInputRef}
         />
         <Button
-          className="absolute top-1/2 right-3 -translate-y-1/2 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+          className="absolute top-1/2 right-3 -translate-y-1/2 hover:bg-background focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
           size="icon"
           type="submit"
           variant="ghost"

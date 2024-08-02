@@ -6,7 +6,7 @@ const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
 export async function GET(req: NextRequest) {
   try {
-    const { session } = await getSession();
+    const session = await getSession();
 
     console.log("session", session);
     console.log("session provider token", session?.provider_token);
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { session } = await getSession();
+    const session = await getSession();
 
     console.log("session", session);
     console.log("session provider token", session?.provider_token);
