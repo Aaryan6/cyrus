@@ -1,6 +1,5 @@
 "use client";
-
-import { useUser } from "@/hooks/use-user";
+import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   DropdownMenu,
@@ -8,36 +7,27 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { ExtendedUser } from "../../next-auth";
 
-export default function ProfileMenu() {
-  const { data: user } = useUser();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-
-  const logOut = async () => {
-    queryClient.invalidateQueries({
-      queryKey: ["user"],
-    });
-    router.push("/sign-in");
-  };
+export default function ProfileMenu({ user }: { user: ExtendedUser }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="focus:outline-0">
-        {/* <Avatar>
-          <AvatarImage src={user?.avatar_url} />
+        <Avatar>
+          <AvatarImage src={user?.image!} />
           <AvatarFallback>
-            {user?.full_name
-              ? user?.full_name?.charAt(0).toUpperCase()
+            {user?.name
+              ? user?.name?.charAt(0).toUpperCase()
               : user?.email?.charAt(0).toUpperCase()}
           </AvatarFallback>
-        </Avatar> */}
+        </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem
           className="cursor-pointer"
-          onClick={async () => await logOut()}
+          onClick={async () => {
+            await signOut();
+          }}
         >
           Logout
         </DropdownMenuItem>

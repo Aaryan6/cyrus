@@ -1,4 +1,4 @@
-import { getSession } from "@/actions/user.server";
+import { currentUser } from "@/hooks/use-current-user";
 import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,12 +6,9 @@ const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
+    const user = await currentUser();
 
-    console.log("session", session);
-    console.log("session provider token", session?.provider_token);
-
-    if (!session?.provider_token) {
+    if (!user?.access_token) {
       return NextResponse.json(
         { error: "No provider token available" },
         { status: 401 }
@@ -25,12 +22,12 @@ export async function GET(req: NextRequest) {
     );
 
     OAuth2Client.setCredentials({
-      access_token: session.provider_token,
+      access_token: user.access_token,
       scope: SCOPES.join(" "),
     });
 
     // Manually check if token is expired
-    const tokenInfo = await OAuth2Client.getTokenInfo(session.provider_token);
+    const tokenInfo = await OAuth2Client.getTokenInfo(user.access_token);
     const isTokenExpired = tokenInfo.expiry_date! < Date.now();
 
     if (isTokenExpired) {
@@ -54,10 +51,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
-
-    console.log("session", session);
-    console.log("session provider token", session?.provider_token);
+    const user = await currentUser();
 
     // if (!session?.provider_token) {
     //   return NextResponse.json(

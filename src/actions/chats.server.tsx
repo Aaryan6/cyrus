@@ -1,17 +1,16 @@
 "use server";
-import db from "@/lib/db";
-import { chats } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { getUserInfo } from "./user.server";
+import { db } from "@/lib/db";
 import { Chats } from "@/lib/types";
+import { auth } from "@/auth";
 
 export async function getChats(chatId: string) {
-  const data = await db.select().from(chats).where(eq(chats.id, chatId));
-  return data[0] as Chats;
+  const data = await db.chats.findUnique({ where: { id: chatId } });
+  return data as Chats;
 }
 
 export async function getChatHistory() {
-  const user = await getUserInfo();
-  const data = await db.select().from(chats).where(eq(chats.userId, user?.id));
+  const session = await auth();
+  if (session === null || !session.user) return;
+  const data = await db.chats.findMany({ where: { userId: session.user?.id } });
   return data as Chats[];
 }

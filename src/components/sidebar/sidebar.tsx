@@ -11,7 +11,7 @@ export default async function Sidebar() {
       <div className="space-y-2">
         <SearchBox />
         <Integrations />
-        <ChatHistory history={history} />
+        <ChatHistory history={history!} />
       </div>
       <div className="space-y-2">
         <ProfileMenu />

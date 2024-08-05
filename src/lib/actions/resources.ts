@@ -1,31 +1,26 @@
 "use server";
 
-import {
-  NewResourceParams,
-  insertResourceSchema,
-  resources,
-} from "@/lib/db/schema";
-import db from "../db";
+import { db } from "../db";
 import { generateEmbeddings } from "../ai/embedding";
-import { embeddings as embeddingsTable } from "../db/schema";
 
-export const createResource = async (input: NewResourceParams) => {
+export const createResource = async ({
+  content,
+  userId,
+}: {
+  content: string;
+  userId: string;
+}) => {
   try {
-    const { content, userId } = insertResourceSchema.parse(input);
+    const resource = await db.resources.create({ data: { content, userId } });
 
-    const [resource] = await db
-      .insert(resources)
-      .values({ content, userId })
-      .returning();
-
-    const embeddings = await generateEmbeddings(content);
-    await db.insert(embeddingsTable).values(
-      embeddings.map((embedding) => ({
+    const generatedEmbeddings = await generateEmbeddings(content);
+    await db.embeddings.createMany({
+      data: generatedEmbeddings.map((embedding) => ({
         resourceId: resource.id,
         userId,
         ...embedding,
-      }))
-    );
+      })),
+    });
 
     return "Resource successfully created and embedded.";
   } catch (e) {

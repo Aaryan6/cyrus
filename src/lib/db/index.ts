@@ -1,11 +1,11 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { PrismaClient } from "@prisma/client";
 
-if (!process.env.DATABASE_URL) {
-  console.log("🔴 Cannot find database url");
+declare global {
+  var prisma: PrismaClient | undefined;
 }
 
-const connectionString = process.env.DATABASE_URL!;
-const pool = postgres(connectionString, { max: 1 });
+export const db = globalThis.prisma || new PrismaClient();
 
-export const db = drizzle(pool);
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prisma = db;
+}

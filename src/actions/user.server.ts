@@ -1,15 +1,32 @@
 "use server";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { UserInfo } from "@/lib/types";
-import { eq } from "drizzle-orm";
 
-export async function getUser() {
-  return null;
+export async function getUserByEmail(email: string) {
+  try {
+    const user = await db.user.findUnique({
+      where: {
+        email,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
 }
 
-export async function getSession() {
-  return null;
+export async function getUserById(id: string) {
+  try {
+    const user = await db.user.findUnique({
+      where: {
+        id,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
 }
 
 export async function updateUserUsername({
@@ -19,10 +36,13 @@ export async function updateUserUsername({
   userId: string;
   username: string;
 }) {
-  const res = await db
-    .update(users)
-    .set({ username: username })
-    .where(eq(users.id, userId))
-    .returning();
+  const res = await db.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      username,
+    },
+  });
   return res;
 }

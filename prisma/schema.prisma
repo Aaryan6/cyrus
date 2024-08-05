@@ -1,0 +1,78 @@
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image     String?
+  name      String?
+  password  String?
+  username  String?   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  accounts      Account[]
+  chats         Chats[]
+  embeddings    Embeddings[]
+  resources     Resources[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([provider, providerAccountId])
+}
+
+model Chats {
+  id        String   @id
+  userId    String
+  payload   Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Embeddings {
+  id       String   @id @default(cuid())
+  resourceId String
+  userId    String
+  content   String?
+  embedding Unsupported("vector(1536)")?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource Resources @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+}
+
+model Resources {
+  id       String   @id @default(cuid())
+  userId   String
+  content  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  embeddings Embeddings[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

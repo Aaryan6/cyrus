@@ -13,7 +13,7 @@ type ChatProps = {
 };
 
 export function Chat({ chatId, initialMessages }: ChatProps) {
-  const { messages, input, handleInputChange, handleSubmit, data } = useChat({
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
     maxToolRoundtrips: 2,
     initialMessages: initialMessages ?? [],
     body: {
@@ -25,7 +25,7 @@ export function Chat({ chatId, initialMessages }: ChatProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <ScrollArea className="h-full w-full flex flex-col">
-      <ChatMessage messages={messages} data={data} />
+      <ChatMessage messages={messages} />
       <PromptBox
         input={input}
         handleInputChange={handleInputChange}

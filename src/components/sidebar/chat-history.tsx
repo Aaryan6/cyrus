@@ -24,9 +24,9 @@ export default function ChatHistory({ history }: { history: Chats[] }) {
         </Link>
       </div>
       <ScrollArea className="h-[15rem]">
-        {history.length !== 0 && (
+        {history?.length !== 0 && (
           <div className="space-y-2 w-full">
-            {history.map((chat: Chats, index: number) => {
+            {history?.map((chat: Chats, index: number) => {
               return (
                 <Link
                   href={`/${username}/${chat.id}`}

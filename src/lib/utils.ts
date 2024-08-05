@@ -24,6 +24,6 @@ export const nanoid = customAlphabet(
   7
 ); // 7-character random string
 
-export const getISTDate = (date: Date) => {
-  return moment(date).tz("Asia/Kolkata").format();
+export const formatForGoogleCalendar = (date: string) => {
+  return moment.tz(date, "Asia/Kolkata").toISOString();
 };

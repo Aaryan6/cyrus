@@ -1,10 +1,8 @@
 "use server";
 import { AIMessage } from "@/actions/chat.actions";
-import { getUserInfo } from "./user.server";
 import { nanoid } from "@/lib/utils";
-import db from "@/lib/db";
-import { chats } from "@/lib/db/schema";
-import { sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { auth } from "@/auth";
 
 type StoreChats = {
   messages: AIMessage[];
@@ -12,36 +10,35 @@ type StoreChats = {
 };
 
 export const storeChat = async ({ messages, chat_id }: StoreChats) => {
-  const user = await getUserInfo();
+  const session = await auth();
+  if (session === null || !session.user) return;
 
   const title = messages[0].content.substring(0, 100);
   const id = chat_id ?? nanoid();
   const createdAt = Date.now();
   const stringDate = new Date(createdAt);
-  const path = `/${user?.username}/${id}`;
+  const path = `/${session.user?.username}/${id}`;
   const payload = {
     id,
     title,
-    user_id: user?.id,
+    user_id: session.user?.id,
     createdAt,
     path,
     messages,
   };
 
-  await db
-    .insert(chats)
-    .values({
+  await db.chats.upsert({
+    where: { id },
+    create: {
       id,
-      payload: sql`${payload}::jsonb`,
-      userId: user?.id,
+      payload,
+      userId: session.user.id!,
       updatedAt: stringDate,
       createdAt: stringDate,
-    })
-    .onConflictDoUpdate({
-      target: chats.id,
-      set: {
-        payload: sql`${payload}::jsonb`,
-        updatedAt: stringDate,
-      },
-    });
+    },
+    update: {
+      payload,
+      updatedAt: stringDate,
+    },
+  });
 };

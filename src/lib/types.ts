@@ -23,3 +23,13 @@ export type UserInfo = {
   full_name: string;
   provider_token: string;
 };
+
+export type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  image: string;
+  access_token?: string;
+  id_token?: string;
+  refresh_token?: string;
+};

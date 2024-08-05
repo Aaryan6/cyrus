@@ -1,52 +1,22 @@
 import { createResource } from "@/lib/actions/resources";
 import { openai } from "@ai-sdk/openai";
-import {
-  convertToCoreMessages,
-  generateObject,
-  generateText,
-  StreamData,
-  streamText,
-  tool,
-} from "ai";
+import { convertToCoreMessages, streamText, tool } from "ai";
 import { z } from "zod";
 import { findRelevantContent } from "@/lib/ai/embedding";
 import { nanoid } from "@/lib/utils";
-import { getUserInfo } from "@/actions/user.server";
-import db from "@/lib/db";
-import { chats } from "@/lib/db/schema";
-import { sql } from "drizzle-orm";
+import { db } from "@/lib/db";
 import {
   addEventToCalendar,
   getEventsFromCalendar,
 } from "@/lib/actions/calendar";
+import { currentUser } from "@/hooks/use-current-user";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const { messages, chatId } = await req.json();
-  const user = await getUserInfo();
-
-  const data = new StreamData();
-
-  const {
-    object: { suggestions },
-  } = await generateObject({
-    model: openai("gpt-4o-mini"),
-    prompt: `generate 2 next possible questions for the user. user: ${
-      messages[messages.length - 1].content
-    }`,
-    schema: z.object({
-      suggestions: z.array(
-        z.object({
-          question: z.string(),
-        })
-      ),
-    }),
-  });
-
-  data.append(suggestions);
-  data.close();
+  const user = await currentUser();
 
   const result = await streamText({
     model: openai("gpt-4o-mini"),
@@ -60,7 +30,7 @@ export async function POST(req: Request) {
             .describe("the content or resource to add to the knowledge base"),
         }),
         execute: async ({ content }) =>
-          createResource({ content, userId: user?.id }),
+          createResource({ content, userId: user?.id! }),
       }),
       getInformation: tool({
         description: `Check the information from your knowledge base before giving the answer, called this function when user talk about him & ask for information.`,
@@ -68,14 +38,14 @@ export async function POST(req: Request) {
           question: z.string().describe("the users question"),
         }),
         execute: async ({ question }) =>
-          findRelevantContent({ userQuery: question, userId: user?.id }),
+          findRelevantContent({ userQuery: question, userId: user?.id! }),
       }),
       addEventToCalendar: tool({
-        description: `Add an event to the calendar, if the user provides any information about the event then use this tool with confirmation of user.`,
+        description: `Add an event to the calendar, if the user provides any information about the event then use this tool with confirmation of user. if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
         parameters: z.object({
           description: z.string().describe("the description of the event"),
           startTime: z.string().describe("the start time of the event"),
-          endTime: z.string().optional().describe("the end time of the event"),
+          endTime: z.string().describe("the end time of the event"),
           summary: z.string().optional().describe("the summary of the event"),
           location: z.string().optional().describe("the location of the event"),
           attendees: z
@@ -101,7 +71,7 @@ export async function POST(req: Request) {
           }),
       }),
       getEventsFromCalendar: tool({
-        description: `Get events from the calendar, if the user wants to know about the events then use this tool.`,
+        description: `Get events from the calendar, if the user wants to know about the events then use this tool. if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
         parameters: z.object({
           question: z.string().describe("the users question"),
         }),
@@ -128,24 +98,24 @@ export async function POST(req: Request) {
         messages: [...messages, { role: "assistant", content: event.text }],
       };
 
-      await db
-        .insert(chats)
-        .values({
+      await db.chats.upsert({
+        where: {
           id,
-          payload: sql`${payload}::jsonb`,
-          userId: user?.id,
+        },
+        update: {
+          payload: payload,
           updatedAt: stringDate,
+        },
+        create: {
+          id,
+          payload,
+          userId: user?.id!,
           createdAt: stringDate,
-        })
-        .onConflictDoUpdate({
-          target: chats.id,
-          set: {
-            payload: sql`${payload}::jsonb`,
-            updatedAt: stringDate,
-          },
-        });
+          updatedAt: stringDate,
+        },
+      });
     },
   });
 
-  return result.toDataStreamResponse({ data });
+  return result.toAIStreamResponse();
 }

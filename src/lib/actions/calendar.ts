@@ -1,5 +1,6 @@
-import { getSession, getUserInfo } from "@/actions/user.server";
+import { currentUser } from "@/hooks/use-current-user";
 import { google } from "googleapis";
+import { formatForGoogleCalendar } from "../utils";
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
@@ -8,7 +9,7 @@ type EventProps = {
   location?: string;
   description: string;
   startTime: string;
-  endTime?: string;
+  endTime: string;
   attendees?: { email: string }[];
 };
 export async function addEventToCalendar({
@@ -20,42 +21,33 @@ export async function addEventToCalendar({
   summary,
 }: EventProps) {
   try {
-    const session = await getSession();
-    console.log(session);
-    if (!session) {
+    const user = await currentUser();
+    if (!user) {
       return { error: "Session is not available" };
     }
     const OAuth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      process.env.AUTH_GOOGLE_ID,
+      process.env.AUTH_GOOGLE_SECRET
     );
 
     OAuth2Client.setCredentials({
-      access_token: session?.access_token,
-      scope: SCOPES.join(" "),
+      access_token: user.access_token,
+      refresh_token: user.refresh_token,
     });
 
-    // Manually check if token is expired
-    const tokenInfo = await OAuth2Client.getTokenInfo(session.access_token);
-    const isTokenExpired = tokenInfo.expiry_date! < Date.now();
-
-    if (isTokenExpired) {
-      // Token is expired, we need to re-authenticate
-      return { error: "Token expired, please re-authenticate" };
-    }
-
     const calendar = google.calendar({ version: "v3", auth: OAuth2Client });
+
+    console.log(startTime, endTime);
 
     const event = await calendar.events.insert({
       requestBody: {
         start: {
-          dateTime: new Date(startTime).toISOString(),
-          timeZone: "IST",
+          dateTime: formatForGoogleCalendar(startTime),
+          timeZone: "Asia/Kolkata",
         },
         end: {
-          dateTime: endTime ? new Date(endTime).toISOString() : null,
-          timeZone: "IST",
+          dateTime: endTime ? formatForGoogleCalendar(endTime) : null,
+          timeZone: "Asia/Kolkata",
         },
         description: description,
         eventType: "default",
@@ -81,33 +73,29 @@ export async function getEventsFromCalendar({
   question: string;
 }) {
   try {
-    const user = await getUserInfo();
-    if (!user?.provider_token) {
+    const user = await currentUser();
+    if (!user?.access_token) {
       return { error: "No provider token available" };
     }
     const OAuth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+      process.env.AUTH_GOOGLE_ID,
+      process.env.AUTH_GOOGLE_SECRET
     );
 
     OAuth2Client.setCredentials({
-      access_token: user.provider_token,
-      scope: SCOPES.join(" "),
+      access_token: user.access_token,
+      refresh_token: user.refresh_token,
     });
-
-    // Manually check if token is expired
-    const tokenInfo = await OAuth2Client.getTokenInfo(user.provider_token);
-    const isTokenExpired = tokenInfo.expiry_date! < Date.now();
-
-    if (isTokenExpired) {
-      // Token is expired, we need to re-authenticate
-      return { error: "Token expired, please re-authenticate" };
-    }
 
     const calendar = google.calendar({ version: "v3", auth: OAuth2Client });
 
-    const event = await calendar.events.list();
+    const event = await calendar.events.list({
+      calendarId: "primary",
+      timeMin: new Date().toISOString(),
+      maxResults: 10,
+      singleEvents: true,
+      orderBy: "startTime",
+    });
 
     return { data: event };
   } catch (error) {

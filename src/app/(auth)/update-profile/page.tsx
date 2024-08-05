@@ -5,28 +5,24 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-import { useUser } from "@/hooks/use-user";
-import { useQueryClient } from "@tanstack/react-query";
 import { updateUserUsername } from "@/actions/user.server";
 import { nanoid } from "@/lib/utils";
+import { GetUser } from "@/hooks/use-user";
 
-export default function SignInPage() {
-  const { data: user } = useUser();
+export default function UpdateProfile() {
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
-  const queryClient = useQueryClient();
   const id = nanoid();
+  const user = GetUser();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -50,22 +46,23 @@ export default function SignInPage() {
         return;
       }
 
-      const data = await updateUserUsername({ userId: user?.id, username });
-      if (data.length === 0) {
+      const data = await updateUserUsername({ userId: user.id!, username });
+      if (!data) {
         return toast.error("Failed to update your username", {
           position: "top-center",
         });
       }
-      queryClient.refetchQueries({
-        queryKey: ["user"],
-      });
-      router.push(`/${data[0].username}/${id}`);
+      router.push(`/${data.username}/${id}`);
     } catch (error) {
       console.log(error);
     } finally {
       setLoading(false);
     }
   };
+
+  if (user?.username !== "") {
+    router.push(`/${user?.username}/${id}`);
+  }
 
   return (
     <div className="h-screen w-full flex items-center justify-center bg-gradient-to-t from-black via-transparent to-transparent">
