@@ -1,10 +1,11 @@
-import { createResource } from "@/lib/actions/resources";
+import { CoreMessage, streamText, tool } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createStreamableUI, createStreamableValue } from "ai/rsc";
+import { BotMessage } from "@/components/chat/bot-message";
 import { openai } from "@ai-sdk/openai";
-import { convertToCoreMessages, streamText, tool } from "ai";
 import { z } from "zod";
+import { createResource } from "@/lib/actions/resources";
 import { findRelevantContent } from "@/lib/ai/embedding";
-import { nanoid } from "@/lib/utils";
-import { db } from "@/lib/db";
 import {
   addEventToCalendar,
   deleteEventsFromCalendar,
@@ -13,15 +14,24 @@ import {
 } from "@/lib/actions/calendar";
 import { currentUser } from "@/hooks/use-current-user";
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+type Props = {
+  uiStream: ReturnType<typeof createStreamableUI>;
+  messages: CoreMessage[];
+};
 
-export async function POST(req: Request) {
-  const { messages, chatId } = await req.json();
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY!,
+});
+
+export async function Answer({ uiStream, messages }: Props) {
   const user = await currentUser();
+  const stream = createStreamableValue();
 
-  const result = await streamText({
-    model: openai("gpt-4o-mini"),
+  uiStream.append(<BotMessage message={stream.value} />);
+
+  let finalInquiry = "";
+  await streamText({
+    model: google("models/gemini-1.5-flash-latest"),
     system: `You are a helpful friendly assistant. Chat with the user, talk like little witty. Try to be helpful and informative. Check your knowledge base before answering any questions, if you not be able to found in the tool calls, respond, "Sorry, I don't know."`,
     tools: {
       addResource: tool({
@@ -126,41 +136,21 @@ export async function POST(req: Request) {
           }),
       }),
     },
-    messages: convertToCoreMessages(messages),
+    messages: messages,
     experimental_toolCallStreaming: true,
-    async onFinish(event) {
-      const title = messages[0].content.substring(0, 100);
-      const id = chatId ?? nanoid();
-      const createdAt = Date.now();
-      const stringDate = new Date(createdAt);
-      const path = `/${user?.username}/${id}`;
-      const payload = {
-        id,
-        title,
-        user_id: user?.id,
-        createdAt,
-        path,
-        messages: [...messages, { role: "assistant", content: event.text }],
-      };
+  })
+    .then(async ({ textStream }) => {
+      for await (const textPart of textStream) {
+        if (textPart) {
+          finalInquiry += textPart;
+          stream.update(finalInquiry);
+        }
+      }
+    })
+    .finally(() => {
+      console.log(finalInquiry);
+      stream.done();
+    });
 
-      await db.chats.upsert({
-        where: {
-          id,
-        },
-        update: {
-          payload: payload,
-          updatedAt: stringDate,
-        },
-        create: {
-          id,
-          payload,
-          userId: user?.id!,
-          createdAt: stringDate,
-          updatedAt: stringDate,
-        },
-      });
-    },
-  });
-
-  return result.toAIStreamResponse();
+  return finalInquiry;
 }

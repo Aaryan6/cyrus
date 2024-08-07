@@ -27,7 +27,7 @@ export const storeChat = async ({ messages, chat_id }: StoreChats) => {
     messages,
   };
 
-  await db.chats.upsert({
+  const res = await db.chats.upsert({
     where: { id },
     create: {
       id,
@@ -41,4 +41,5 @@ export const storeChat = async ({ messages, chat_id }: StoreChats) => {
       updatedAt: stringDate,
     },
   });
+  console.log(res);
 };

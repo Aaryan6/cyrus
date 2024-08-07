@@ -1,5 +1,11 @@
 "use server";
-import { CoreMessage } from "ai";
+import {
+  convertToCoreMessages,
+  CoreMessage,
+  Message,
+  streamText,
+  tool,
+} from "ai";
 import {
   createAI,
   createStreamableUI,
@@ -8,49 +14,54 @@ import {
   getMutableAIState,
   StreamableValue,
 } from "ai/rsc";
-import { StreamResponse } from "@/actions/object-stream";
+import { Answer } from "@/actions/chat.answer";
 import { UserMessage } from "@/components/chat/user-message";
 import { BotMessage } from "@/components/chat/bot-message";
 import { storeChat } from "@/actions/store-chat";
 import { revalidatePath } from "next/cache";
 import { nanoid } from "@/lib/utils";
+import { currentUser } from "@/hooks/use-current-user";
 
-async function submit(content: string, id: string) {
+async function submit(input: string, id: string) {
   "use server";
 
-  const aiState = getMutableAIState<typeof AI>();
+  const history = getMutableAIState();
+  const stream = createStreamableValue("");
   const uiStream = createStreamableUI();
+  const user = await currentUser();
 
-  const messages: CoreMessage[] = [...aiState.get()?.messages] as any[];
+  const messages: CoreMessage[] = [
+    ...history.get().messages,
+    { role: "user", content: input },
+  ];
 
-  if (content) {
-    aiState.update({
-      chatId: id ?? aiState.get().chatId,
+  if (input) {
+    history.update({
+      chatId: id ?? history.get().chatId,
       messages: [
-        ...aiState.get().messages,
+        ...history.get().messages,
         {
           id: nanoid(),
           role: "user",
-          content,
+          content: input,
         },
       ],
     });
     messages.push({
       role: "user",
-      content,
+      content: input,
     });
   }
 
   const processEvents = async () => {
-    const answerId = nanoid();
-    const answer = await StreamResponse({ uiStream, messages });
+    const answer = await Answer({ uiStream, messages });
 
-    aiState.done({
-      ...aiState.get(),
+    history.done({
+      ...history.get(),
       messages: [
-        ...aiState.get().messages,
+        ...history.get().messages,
         {
-          id: answerId,
+          id: nanoid(),
           role: "assistant",
           content: answer,
         },
@@ -115,9 +126,8 @@ export const AI = createAI<AIState, UIState>({
   onSetAIState: async ({ state, done }: { state: AIState; done: boolean }) => {
     "use server";
     if (done) {
-      revalidatePath(`/chat-bot`);
+      await storeChat({ messages: state.messages, chat_id: state.chatId });
     }
-    await storeChat({ messages: state.messages, chat_id: state.chatId });
   },
 });
 

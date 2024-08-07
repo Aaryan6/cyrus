@@ -7,7 +7,6 @@ import ProfileMenu from "../profile-menu";
 
 export default async function Navbar() {
   const session = await auth();
-  console.log(session);
   return (
     <header className="bg-background border-b text-foreground px-6 flex items-center justify-between h-[4rem]">
       <div className="flex items-center">

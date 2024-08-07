@@ -4,9 +4,10 @@ import { Message } from "ai";
 import { UserMessage } from "./user-message";
 import { StaticBotMessage } from "./bot-message";
 import Image from "next/image";
+import { UIState } from "@/actions/chat.actions";
 
 export interface ChatMessageProps {
-  messages: Message[];
+  messages: UIState;
 }
 
 export function ChatMessage({ messages }: ChatMessageProps) {
@@ -22,7 +23,7 @@ export function ChatMessage({ messages }: ChatMessageProps) {
         "mb-4 flex-1 flex flex-col gap-4 max-w-4xl mx-auto pt-10 pb-20"
       )}
     >
-      {messages?.map((message, index: number) => {
+      {/* {messages?.map((message, index: number) => {
         return (
           <div key={message.id ?? index} className="flex flex-col">
             {message.role === "assistant" ? (
@@ -48,6 +49,13 @@ export function ChatMessage({ messages }: ChatMessageProps) {
                   />
                 ))}
             </div>
+          </div>
+        );
+      })} */}
+      {messages.map((message, index: number) => {
+        return (
+          <div key={message.id ?? index}>
+            <div className="">{message.display}</div>
           </div>
         );
       })}
