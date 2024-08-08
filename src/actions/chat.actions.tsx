@@ -53,27 +53,13 @@ async function submit(input: string, id: string) {
     });
   }
 
-  const processEvents = async () => {
-    const answer = await Answer({ uiStream, messages });
+  const result = await Answer({ uiStream, messages, history });
 
-    history.done({
-      ...history.get(),
-      messages: [
-        ...history.get().messages,
-        {
-          id: nanoid(),
-          role: "assistant",
-          content: answer,
-        },
-      ],
-    });
-    uiStream.done();
-  };
+  uiStream.done();
 
-  processEvents();
   return {
     id: nanoid(),
-    display: uiStream.value,
+    display: result,
   };
 }
 

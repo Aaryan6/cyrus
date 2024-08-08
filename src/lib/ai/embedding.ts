@@ -1,3 +1,4 @@
+"use server";
 import { embed, embedMany, cosineSimilarity } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { Prisma, PrismaClient } from "@prisma/client";

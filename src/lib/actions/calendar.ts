@@ -1,3 +1,4 @@
+"use server";
 import { currentUser } from "@/hooks/use-current-user";
 import { google } from "googleapis";
 import { formatForGoogleCalendar } from "../utils";
@@ -104,7 +105,7 @@ export async function getEventsFromCalendar() {
       orderBy: "startTime",
     });
 
-    return { data: event };
+    return { data: event.data };
   } catch (error) {
     console.log(error);
     return {
