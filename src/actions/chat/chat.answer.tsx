@@ -1,6 +1,7 @@
 "use server";
-import { CoreMessage, generateId } from "ai";
+import { CoreMessage, generateId, streamText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 import {
   createStreamableUI,
   createStreamableValue,
@@ -10,6 +11,8 @@ import {
 import {
   BotCard,
   BotMessage,
+  SpinnerMessage,
+  StaticBotMessage,
   TokenErrorMessage,
 } from "@/components/chat/bot-message";
 import { z } from "zod";
@@ -31,54 +34,27 @@ import {
 
 type Props = {
   messages: CoreMessage[];
-  history: ReturnType<typeof getMutableAIState>;
+  aiState: ReturnType<typeof getMutableAIState>;
 };
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY!,
 });
 
-export async function Answer({ messages, history }: Props) {
-  let textStream: undefined | ReturnType<typeof createStreamableValue<string>>;
-  let textNode: undefined | React.ReactNode;
+export async function Answer({ messages, aiState }: Props) {
+  const textStream = createStreamableValue("");
+  const spinnerStream = createStreamableUI(<SpinnerMessage />);
+  const messageStream = createStreamableUI(null);
+  const uiStream = createStreamableUI();
 
-  const result = await streamUI({
-    model: google("models/gemini-1.5-flash-latest"),
+  const result = await streamText({
+    model: openai("models/gemini-1.5-flash-latest"),
     system: `You are a helpful friendly assistant, your name is Jinn. Chat with the user & talk like little witty.
     
-    - If the user request to add an event to the calendar then use the tool \`schedule_meeting\` to add the event.
-    - If the user request to get the events from the calendar then use the tool \`get_events_from_calendar\` to get the events.
+    - If the user request to add an event to the calendar then use the tool \`scheduleMeeting\` to add the event.
+    - If the user request to get the events from the calendar then use the tool \`getEventsFromCalendar\` to get the events.
     
     Besides that, you can also chat with users.`,
-    text: ({ content, done, delta }) => {
-      if (!textStream) {
-        textStream = createStreamableValue("");
-        textNode = (
-          <BotCard>
-            <BotMessage message={textStream.value} />
-          </BotCard>
-        );
-      }
-
-      if (done) {
-        textStream.done(content);
-        history.done({
-          ...history.get(),
-          messages: [
-            ...history.get().messages,
-            {
-              id: nanoid(),
-              role: "assistant",
-              content,
-            },
-          ],
-        });
-      } else {
-        textStream.append(delta);
-      }
-
-      return textNode;
-    },
     tools: {
       scheduleMeeting: {
         description: `Use this tool to schedule the meeting on the calendar, ask user for information at least required information. for the date context today date time is ${new Date()}`,
@@ -104,127 +80,140 @@ export async function Answer({ messages, history }: Props) {
             .optional()
             .describe("the attendees of the event"),
         }),
-        generate: async function* ({
-          description,
-          startTime,
-          attendees,
-          endTime,
-          location,
-          summary,
-        }) {
-          yield <UIStreamingMessage />;
-          const { data, error } = await scheduleEventToCalendar({
-            description,
-            startTime,
-            attendees,
-            endTime,
-            location,
-            summary,
-          });
-          if (error) {
-            return <div className="text-red-500">{error}</div>;
-          }
-
-          const toolCallId = generateId();
-
-          history.done({
-            ...history.get(),
-            messages: [
-              ...history.get().messages,
-              {
-                id: generateId(),
-                role: "assistant",
-                content: [
-                  {
-                    type: "tool-call",
-                    toolName: "scheduleMeeting",
-                    toolCallId,
-                    arg: {
-                      description,
-                      startTime,
-                      attendees,
-                      endTime,
-                      location,
-                      summary,
-                    },
-                  },
-                ],
-              },
-              {
-                id: generateId(),
-                role: "tool",
-                content: [
-                  {
-                    type: "tool-result",
-                    toolName: "scheduleMeeting",
-                    toolCallId,
-                    result: data,
-                  },
-                ],
-              },
-            ],
-          });
-          return <CreatedEvent data={data!} />;
-        },
       },
       getEventsFromCalendar: {
         description: `Get events from the calendar, if the user wants to know about the events then use this tool. if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
         parameters: z.object({
           question: z.string().describe("the users question"),
         }),
-        generate: async function* () {
-          yield <UIStreamingMessage />;
-
-          const { data, error } = await getEventsFromCalendar();
-
-          console.log({ data });
-          const toolCallId = generateId();
-
-          history.done({
-            ...history.get(),
-            messages: [
-              ...history.get().messages,
-              {
-                id: generateId(),
-                role: "assistant",
-                content: [
-                  {
-                    type: "tool-call",
-                    toolName: "getEventsFromCalendar",
-                    toolCallId,
-                    arg: {},
-                  },
-                ],
-              },
-              {
-                id: generateId(),
-                role: "tool",
-                content: [
-                  {
-                    type: "tool-result",
-                    toolName: "scheduleMeeting",
-                    toolCallId,
-                    result: data,
-                  },
-                ],
-              },
-            ],
-          });
-          if (error) {
-            return (
-              <BotCard>
-                <TokenErrorMessage message={error} />
-              </BotCard>
-            );
-          }
-          return <ShowEvent data={data!} />;
-        },
       },
     },
-    messages: messages,
+    messages,
   });
 
-  return result.value;
+  let textContent = "";
+  spinnerStream.done(null);
+
+  for await (const delta of result.fullStream) {
+    const { type } = delta;
+
+    if (type === "text-delta") {
+      const { textDelta } = delta;
+
+      textContent += textDelta;
+      messageStream.update(
+        <BotCard>
+          <StaticBotMessage message={textContent} />
+        </BotCard>
+      );
+
+      aiState.update({
+        ...aiState.get(),
+        messages: [
+          ...aiState.get().messages,
+          {
+            id: nanoid(),
+            role: "assistant",
+            content: textContent,
+          },
+        ],
+      });
+    } else if (type === "tool-call") {
+      const { toolName, args } = delta;
+
+      if (toolName === "getEventsFromCalendar") {
+        const { data } = await getEventsFromCalendar();
+
+        uiStream.update(
+          <BotCard>
+            <ShowEvent data={data!} />
+          </BotCard>
+        );
+
+        aiState.done({
+          ...aiState.get(),
+          interactions: [],
+          messages: [
+            ...aiState.get().messages,
+            {
+              id: nanoid(),
+              role: "assistant",
+              content: "Here are the your events:",
+              display: {
+                name: "getEventsFromCalendar",
+                props: {
+                  events: data,
+                },
+              },
+            },
+          ],
+        });
+      } else if (toolName === "scheduleMeeting") {
+        const {
+          description,
+          endTime,
+          startTime,
+          summary,
+          attendees,
+          location,
+        } = args;
+
+        console.log({
+          description,
+          endTime,
+          startTime,
+          summary,
+          attendees,
+          location,
+        });
+        const { data } = await scheduleEventToCalendar({
+          endTime,
+          startTime,
+          summary,
+          description,
+          location,
+          attendees,
+        });
+        console.log({ data });
+        uiStream.update(
+          <BotCard>
+            <CreatedEvent data={data!} />
+          </BotCard>
+        );
+
+        aiState.done({
+          ...aiState.get(),
+          interactions: [],
+          messages: [
+            ...aiState.get().messages,
+            {
+              id: nanoid(),
+              role: "assistant",
+              content: "Here is the new added event for you.",
+              display: {
+                name: "scheduleMeeting",
+                props: {
+                  startTime,
+                  endTime,
+                  summary,
+                  description,
+                  location,
+                },
+              },
+            },
+          ],
+        });
+      }
+    }
+  }
+  uiStream.done();
+  textStream.done();
+  messageStream.done();
+
+  return {
+    spinner: spinnerStream.value,
+    display: messageStream.value,
+  };
 }
 
 // TODO: tools to add

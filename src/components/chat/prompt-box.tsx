@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn, nanoid } from "@/lib/utils";
 import { PromptOptions } from "./prompt-options";
-import { AI } from "@/actions/chat.actions";
+import { AI } from "@/actions/chat/chat.actions";
 import { useActions, useUIState } from "ai/rsc";
 import { generateId } from "ai";
 import { UserMessage } from "./user-message";

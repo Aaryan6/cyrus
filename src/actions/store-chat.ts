@@ -1,5 +1,5 @@
 "use server";
-import { AIMessage } from "@/actions/chat.actions";
+import { AIMessage } from "@/actions/chat/chat.actions";
 import { nanoid } from "@/lib/utils";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";

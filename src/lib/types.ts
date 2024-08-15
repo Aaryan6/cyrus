@@ -1,4 +1,4 @@
-import { AIMessage } from "@/actions/chat.actions";
+import { AIMessage } from "@/actions/chat/chat.actions";
 
 export type Chats = {
   id: string;

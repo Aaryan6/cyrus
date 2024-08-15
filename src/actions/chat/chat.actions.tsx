@@ -1,7 +1,7 @@
 "use server";
 import { CoreMessage } from "ai";
 import { createAI, getAIState, getMutableAIState } from "ai/rsc";
-import { Answer } from "@/actions/chat.answer";
+import { Answer } from "@/actions/chat/chat.answer";
 import { UserMessage } from "@/components/chat/user-message";
 import { BotCard, StaticBotMessage } from "@/components/chat/bot-message";
 import { storeChat } from "@/actions/store-chat";
@@ -11,18 +11,18 @@ import { CreatedEvent, ShowEvent } from "@/components/chat/ui/calendar-event";
 async function submit(input: string, id: string) {
   "use server";
 
-  const history = getMutableAIState();
+  const aiState = getMutableAIState();
 
   const messages: CoreMessage[] = [
-    ...history.get().messages,
+    ...aiState.get().messages,
     { role: "user", content: input },
   ];
 
   if (input) {
-    history.update({
-      chatId: id ?? history.get().chatId,
+    aiState.update({
+      chatId: id ?? aiState.get().chatId,
       messages: [
-        ...history.get().messages,
+        ...aiState.get().messages,
         {
           id: nanoid(),
           role: "user",
@@ -36,26 +36,33 @@ async function submit(input: string, id: string) {
     });
   }
 
-  const result = await Answer({ messages, history });
+  const { display, spinner } = await Answer({ messages, aiState });
 
   return {
     id: nanoid(),
-    display: result,
+    display,
+    spinner,
   };
 }
 
 export type AIMessage = CoreMessage & {
   id: string;
+  display?: {
+    name: string;
+    props: Record<string, any>;
+  };
 };
 
 export type AIState = {
   messages: AIMessage[];
   chatId: string;
+  interactions?: string[];
 };
 
 export type UIState = {
   id: string;
   display: React.ReactNode;
+  spinner?: React.ReactNode;
 }[];
 
 export interface Chat extends Record<string, any> {
@@ -74,6 +81,7 @@ export const AI = createAI<AIState, UIState>({
   initialAIState: {
     chatId: nanoid(),
     messages: [],
+    interactions: [],
   } as AIState,
   onGetUIState: async (): Promise<UIState | undefined> => {
     "use server";
@@ -88,6 +96,7 @@ export const AI = createAI<AIState, UIState>({
   },
   onSetAIState: async ({ state, done }: { state: AIState; done: boolean }) => {
     "use server";
+    console.log({ state });
     if (done) {
       await storeChat({ messages: state.messages, chat_id: state.chatId });
     }
@@ -95,44 +104,25 @@ export const AI = createAI<AIState, UIState>({
 });
 
 export const getUIStateFromAIState = (aiState: Chat) => {
-  return aiState?.messages?.map((message) => {
-    const { id, role, content } = message;
-    switch (role) {
-      case "user":
-        return {
-          id,
-          display: <UserMessage message={content as string} />,
-        };
-      case "assistant":
-        if (typeof content === "string") {
-          return {
-            id,
-            display: (
-              <BotCard>
-                <StaticBotMessage message={content} />
-              </BotCard>
-            ),
-          };
-        } else {
-          return null;
-        }
-      case "tool":
-        return {
-          id,
-          display: content.map((tool) => {
-            return tool.toolName === "scheduleMeeting" ? (
-              <BotCard>
-                <CreatedEvent data={tool.result!} />
-              </BotCard>
-            ) : tool.toolName === "getEventsFromCalendar" ? (
-              <BotCard>
-                <ShowEvent data={tool.result!} />
-              </BotCard>
-            ) : null;
-          }),
-        };
-      default:
-        return null;
-    }
-  }) as UIState;
+  return aiState.messages
+    ?.filter((msg) => msg.role !== "system")
+    .map((msg, index) => ({
+      id: `${aiState.id}-${index}`,
+      display:
+        msg.role === "assistant" ? (
+          msg.display?.name === "scheduleMeeting" ? (
+            <BotCard>
+              <CreatedEvent data={msg.display.props} />
+            </BotCard>
+          ) : msg.display?.name === "getEventsFromCalendar" ? (
+            <BotCard>
+              <ShowEvent data={msg.display?.props!} />
+            </BotCard>
+          ) : (
+            <StaticBotMessage message={msg.content as string} />
+          )
+        ) : msg.role === "user" ? (
+          <UserMessage message={msg.content as string} />
+        ) : null,
+    }));
 };

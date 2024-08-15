@@ -1,5 +1,5 @@
-import { AI } from "@/actions/chat.actions";
-import { getChats } from "@/actions/chats.server";
+import { AI } from "@/actions/chat/chat.actions";
+import { getChats } from "@/actions/chat/chats.server";
 import { Chat } from "@/components/chat/chat";
 import { currentUser } from "@/hooks/use-current-user";
 import { redirect } from "next/navigation";

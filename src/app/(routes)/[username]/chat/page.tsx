@@ -1,4 +1,4 @@
-import { AI } from "@/actions/chat.actions";
+import { AI } from "@/actions/chat/chat.actions";
 import { Chat } from "@/components/chat/chat";
 import { currentUser } from "@/hooks/use-current-user";
 import { generateId } from "ai";

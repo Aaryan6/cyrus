@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
-import { UIState } from "@/actions/chat.actions";
+import { UIState } from "@/actions/chat/chat.actions";
 
 export interface ChatMessageProps {
   messages: UIState;

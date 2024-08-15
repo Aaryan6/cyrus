@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import { DEFAULT_REDIRECT_URL } from "../../../routes";
 import { GetUser } from "@/hooks/use-user";
 import { Button } from "../ui/button";
+import { spinner } from "../spinner";
 
 type BotMessageProps = {
   message: StreamableValue;
@@ -129,3 +130,16 @@ export const TokenErrorMessage = ({ message }: { message: string }) => {
     </div>
   );
 };
+
+export function SpinnerMessage() {
+  return (
+    <div className="flex-1 relative w-full max-w-[80%]">
+      <div className="flex w-full justify-start gap-x-2 max-w-4xl mx-auto h-full">
+        <div className="bg-foreground border border-primary w-8 h-8 rounded-full grid place-items-center">
+          <BotIcon size={18} className="text-muted" />
+        </div>
+        {spinner}
+      </div>
+    </div>
+  );
+}

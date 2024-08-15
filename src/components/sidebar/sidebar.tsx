@@ -2,7 +2,7 @@ import ChatHistory from "./chat-history";
 import SearchBox from "./search-box";
 import Integrations from "./integrations";
 import ProfileMenu from "./profile-menu";
-import { getChatHistory } from "@/actions/chats.server";
+import { getChatHistory } from "@/actions/chat/chats.server";
 import { currentUser } from "@/hooks/use-current-user";
 
 export default async function Sidebar() {
