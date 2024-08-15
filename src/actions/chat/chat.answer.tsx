@@ -5,7 +5,17 @@ import {
   createStreamableValue,
   getMutableAIState,
 } from "ai/rsc";
-import { BotMessage } from "@/components/chat/bot-message";
+import { BotCard, BotMessage } from "@/components/chat/bot-message";
+import {
+  CalendarCard,
+  CalendarEvents,
+} from "@/components/chat/ui/calendar-event";
+import {
+  getEventsFromCalendar,
+  scheduleEventToCalendar,
+} from "@/lib/actions/calendar";
+import { nanoid } from "@/lib/utils";
+import { z } from "zod";
 
 type Props = {
   aiState: ReturnType<typeof getMutableAIState>;
@@ -14,8 +24,6 @@ type Props = {
 
 export async function Answer({ aiState, uiStream }: Props) {
   const stream = createStreamableValue();
-
-  console.log({ messages: aiState.get() });
 
   uiStream.append(<BotMessage message={stream.value} />);
 
@@ -29,47 +37,146 @@ export async function Answer({ aiState, uiStream }: Props) {
     
     Besides that, you can also chat with users.`,
     messages: aiState.get().messages,
+    tools: {
+      addEventToCalendar: {
+        description: `Use this tool to schedule the meeting on the calendar, ask user for information at least required information. for the date context today date time is ${new Date()}`,
+        parameters: z.object({
+          description: z.string().describe("the description of the meeting"),
+          startTime: z
+            .string()
+            .describe(
+              `the start time of the event in the format of ${new Date().toISOString()}`
+            ),
+          endTime: z
+            .string()
+            .describe(
+              `the start time of the event in the format of ${new Date().toISOString()}`
+            ),
+          summary: z.string().describe("the title of the meeting"),
+          location: z
+            .string()
+            .optional()
+            .describe("the location of the meeting"),
+          attendees: z
+            .array(z.object({ email: z.string() }))
+            .optional()
+            .describe("the attendees of the event"),
+        }),
+      },
+      getEventsFromCalendar: {
+        description: `Get events from the calendar, if the user wants to know about the events then use this tool. if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
+        parameters: z.object({
+          question: z.string().describe("the users question"),
+        }),
+      },
+    },
   })
-    .then(async ({ textStream }) => {
-      for await (const textPart of textStream) {
-        if (textPart) {
-          textContent += textPart;
+    .then(async ({ fullStream }) => {
+      for await (const delta of fullStream) {
+        const { type } = delta;
+
+        if (type === "finish") {
+          aiState.done({
+            ...aiState.get(),
+            messages: [
+              ...aiState.get().messages,
+              {
+                id: nanoid(),
+                role: "assistant",
+                content: textContent,
+              },
+            ],
+          });
+        }
+
+        if (type === "text-delta") {
+          const { textDelta } = delta;
+          textContent += textDelta;
           stream.update(textContent);
+        } else if (type === "tool-call") {
+          const { toolName, args } = delta;
+
+          if (toolName === "addEventToCalendar") {
+            const {
+              description,
+              endTime,
+              startTime,
+              summary,
+              attendees,
+              location,
+            } = args;
+
+            const { data } = await scheduleEventToCalendar({
+              endTime,
+              startTime,
+              summary,
+              description,
+              location,
+              attendees,
+            });
+
+            uiStream.update(
+              <BotCard>
+                <CalendarCard data={data!} />
+              </BotCard>
+            );
+
+            aiState.done({
+              ...aiState.get(),
+              interactions: [],
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: "assistant",
+                  content: "Here is the new added event for you.",
+                  display: {
+                    name: "addEventToCalendar",
+                    props: {
+                      startTime,
+                      endTime,
+                      summary,
+                      description,
+                      location,
+                    },
+                  },
+                },
+              ],
+            });
+          } else if (toolName === "getEventsFromCalendar") {
+            const { data } = await getEventsFromCalendar();
+
+            uiStream.update(
+              <BotCard>
+                <CalendarEvents data={data!} />
+              </BotCard>
+            );
+
+            aiState.done({
+              ...aiState.get(),
+              interactions: [],
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: "assistant",
+                  content: "Here are the your events:",
+                  display: {
+                    name: "getEventsFromCalendar",
+                    props: {
+                      events: data,
+                    },
+                  },
+                },
+              ],
+            });
+          }
         }
       }
     })
     .finally(() => {
       stream.done();
     });
-
-  // for await (const delta of result.fullStream) {
-  //   const { type } = delta;
-
-  //   if (type === "text-delta") {
-  //     const { textDelta } = delta;
-
-  //     textContent += textDelta;
-  //     uiStream.update(
-  //       <BotCard>
-  //         <StaticBotMessage message={textContent} />
-  //       </BotCard>
-  //     );
-
-  //     aiState.update({
-  //       ...aiState.get(),
-  //       messages: [
-  //         ...aiState.get().messages,
-  //         {
-  //           id: nanoid(),
-  //           role: "assistant",
-  //           content: textContent,
-  //         },
-  //       ],
-  //     });
-  //   }
-  // }
-
-  // uiStream.done();
 
   return {
     answer: textContent,
@@ -114,7 +221,7 @@ export async function Answer({ aiState, uiStream }: Props) {
           if (error) {
             return <div className="text-red-500">{error}</div>;
           }
-          return <CreatedEvent data={data!} />;
+          return <CalendarCard data={data!} />;
         },
       },
 

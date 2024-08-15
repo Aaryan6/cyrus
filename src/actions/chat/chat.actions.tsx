@@ -3,28 +3,24 @@ import { CoreMessage } from "ai";
 import {
   createAI,
   createStreamableUI,
-  createStreamableValue,
   getAIState,
   getMutableAIState,
 } from "ai/rsc";
 import { Answer } from "@/actions/chat/chat.answer";
 import { UserMessage } from "@/components/chat/user-message";
-import {
-  BotCard,
-  SpinnerMessage,
-  StaticBotMessage,
-} from "@/components/chat/bot-message";
+import { BotCard, StaticBotMessage } from "@/components/chat/bot-message";
 import { storeChat } from "@/actions/store-chat";
 import { nanoid } from "@/lib/utils";
-import { CreatedEvent, ShowEvent } from "@/components/chat/ui/calendar-event";
+import {
+  CalendarCard,
+  CalendarEvents,
+} from "@/components/chat/ui/calendar-event";
 
 async function submit(input: string, id: string) {
   "use server";
 
   const aiState = getMutableAIState();
   const uiStream = createStreamableUI();
-
-  console.log({ input, id });
 
   if (input) {
     aiState.update({
@@ -41,24 +37,11 @@ async function submit(input: string, id: string) {
   }
 
   const processEvents = async () => {
-    const { answer } = await Answer({
+    await Answer({
       aiState,
       uiStream,
     });
 
-    aiState.done({
-      ...aiState.get(),
-      messages: [
-        ...aiState.get().messages,
-        {
-          id: nanoid(),
-          role: "assistant",
-          content: answer,
-        },
-      ],
-    });
-
-    console.log({ aiState: aiState.get() });
     uiStream.done();
   };
   processEvents();
@@ -71,6 +54,10 @@ async function submit(input: string, id: string) {
 
 export type AIMessage = CoreMessage & {
   id: string;
+  display?: {
+    name: string;
+    props: Record<string, any>;
+  };
 };
 
 export type AIState = {
@@ -123,7 +110,7 @@ export const getUIStateFromAIState = (aiState: Chat) => {
   return aiState.messages
     ?.filter((message) => message.role !== "system")
     .map((message) => {
-      const { id, role, content } = message;
+      const { id, role, content, display } = message;
       switch (role) {
         case "user":
           return {
@@ -131,10 +118,38 @@ export const getUIStateFromAIState = (aiState: Chat) => {
             display: <UserMessage message={content as string} />,
           };
         case "assistant":
-          return {
-            id,
-            display: <StaticBotMessage message={content as string} />,
-          };
+          if (display) {
+            switch (display.name) {
+              case "addEventToCalendar":
+                return {
+                  id,
+                  display: (
+                    <BotCard>
+                      <CalendarCard data={display.props} />
+                    </BotCard>
+                  ),
+                };
+              case "getEventsFromCalendar":
+                return {
+                  id,
+                  display: (
+                    <BotCard>
+                      <CalendarEvents data={display.props.events} />
+                    </BotCard>
+                  ),
+                };
+              default:
+                return {
+                  id,
+                  display: <StaticBotMessage message={content as string} />,
+                };
+            }
+          } else {
+            return {
+              id,
+              display: <StaticBotMessage message={content as string} />,
+            };
+          }
         default:
           return {
             id,

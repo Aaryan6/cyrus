@@ -112,52 +112,17 @@ type SingleEvent = {
   eventType?: string | null;
 };
 
-export function ShowEvent({ data }: EventsListProps) {
+export function CalendarEvents({ data }: EventsListProps) {
   return (
-    <div className="flex-1 relative w-full max-w-[80%]">
-      <div className="flex w-full justify-start gap-x-2 max-w-4xl mx-auto h-full">
-        <div className="bg-foreground border border-primary w-10 h-10 rounded-full grid place-items-center">
-          <BotIcon className="text-muted" />
-        </div>
-        {data.items.map((item: SingleEvent) => (
-          <Card className="w-full max-w-md" key={item.id}>
-            <CardContent className="space-y-4 py-4">
-              <div className="flex items-center space-x-4">
-                <CalendarSVG />
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {data?.summary || "No title"}
-                  </h3>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <CalendarIcon className="w-4 h-4" />
-                    <span>
-                      {new Date(item.start?.dateTime!).getDate()} at{" "}
-                      {new Date(item.start?.dateTime!).toTimeString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <ChevronDown className="w-4 h-4" />
-                  <span>Details</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <ClockIcon className="w-4 h-4" />
-                  <span>1 hour</span>
-                </div>
-              </div>
-              <p className="text-sm">{data.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+    <div className="flex-1 flex flex-col gap-4">
+      {data.items?.map((item: SingleEvent) => (
+        <CalendarCard data={item} key={item.id} />
+      ))}
     </div>
   );
 }
 
-export const CreatedEvent = ({ data }: { data: SingleEvent }) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const CalendarCard = ({ data }: { data: SingleEvent }) => {
   return (
     <Card className="w-full max-w-md bg-muted text-foreground">
       <CardContent className="space-y-4 py-4">
