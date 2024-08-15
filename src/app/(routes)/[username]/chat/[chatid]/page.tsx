@@ -21,11 +21,7 @@ export default async function ChatPage({
       }}
     >
       <div className="flex-1 flex flex-col">
-        <Chat
-          chatId={chatid}
-          initialMessages={chats?.messages || []}
-          username={user.username}
-        />
+        <Chat chatId={chatid} username={user.username} />
       </div>
     </AI>
   );

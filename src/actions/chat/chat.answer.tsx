@@ -1,218 +1,78 @@
-"use server";
-import { CoreMessage, generateId, streamText } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import {
   createStreamableUI,
   createStreamableValue,
   getMutableAIState,
-  streamUI,
 } from "ai/rsc";
-import {
-  BotCard,
-  BotMessage,
-  SpinnerMessage,
-  StaticBotMessage,
-  TokenErrorMessage,
-} from "@/components/chat/bot-message";
-import { z } from "zod";
-import { createResource } from "@/lib/actions/resources";
-import { findRelevantContent } from "@/lib/ai/embedding";
-import {
-  addEventToCalendar,
-  deleteEventsFromCalendar,
-  getEventsFromCalendar,
-  scheduleEventToCalendar,
-  updateEventsFromCalendar,
-} from "@/lib/actions/calendar";
-import { nanoid } from "@/lib/utils";
-import {
-  CreatedEvent,
-  ShowEvent,
-  UIStreamingMessage,
-} from "@/components/chat/ui/calendar-event";
+import { BotMessage } from "@/components/chat/bot-message";
 
 type Props = {
-  messages: CoreMessage[];
   aiState: ReturnType<typeof getMutableAIState>;
+  uiStream: ReturnType<typeof createStreamableUI>;
 };
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
+export async function Answer({ aiState, uiStream }: Props) {
+  const stream = createStreamableValue();
 
-export async function Answer({ messages, aiState }: Props) {
-  const textStream = createStreamableValue("");
-  const spinnerStream = createStreamableUI(<SpinnerMessage />);
-  const messageStream = createStreamableUI(null);
-  const uiStream = createStreamableUI();
+  console.log({ messages: aiState.get() });
 
-  const result = await streamText({
-    model: openai("models/gemini-1.5-flash-latest"),
+  uiStream.append(<BotMessage message={stream.value} />);
+
+  let textContent = "";
+  await streamText({
+    model: openai("gpt-4o-mini"),
     system: `You are a helpful friendly assistant, your name is Jinn. Chat with the user & talk like little witty.
     
     - If the user request to add an event to the calendar then use the tool \`scheduleMeeting\` to add the event.
     - If the user request to get the events from the calendar then use the tool \`getEventsFromCalendar\` to get the events.
     
     Besides that, you can also chat with users.`,
-    tools: {
-      scheduleMeeting: {
-        description: `Use this tool to schedule the meeting on the calendar, ask user for information at least required information. for the date context today date time is ${new Date()}`,
-        parameters: z.object({
-          description: z.string().describe("the description of the meeting"),
-          startTime: z
-            .string()
-            .describe(
-              `the start time of the event in the format of ${new Date().toISOString()}`
-            ),
-          endTime: z
-            .string()
-            .describe(
-              `the start time of the event in the format of ${new Date().toISOString()}`
-            ),
-          summary: z.string().describe("the title of the meeting"),
-          location: z
-            .string()
-            .optional()
-            .describe("the location of the meeting"),
-          attendees: z
-            .array(z.object({ email: z.string() }))
-            .optional()
-            .describe("the attendees of the event"),
-        }),
-      },
-      getEventsFromCalendar: {
-        description: `Get events from the calendar, if the user wants to know about the events then use this tool. if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
-        parameters: z.object({
-          question: z.string().describe("the users question"),
-        }),
-      },
-    },
-    messages,
-  });
-
-  let textContent = "";
-  spinnerStream.done(null);
-
-  for await (const delta of result.fullStream) {
-    const { type } = delta;
-
-    if (type === "text-delta") {
-      const { textDelta } = delta;
-
-      textContent += textDelta;
-      messageStream.update(
-        <BotCard>
-          <StaticBotMessage message={textContent} />
-        </BotCard>
-      );
-
-      aiState.update({
-        ...aiState.get(),
-        messages: [
-          ...aiState.get().messages,
-          {
-            id: nanoid(),
-            role: "assistant",
-            content: textContent,
-          },
-        ],
-      });
-    } else if (type === "tool-call") {
-      const { toolName, args } = delta;
-
-      if (toolName === "getEventsFromCalendar") {
-        const { data } = await getEventsFromCalendar();
-
-        uiStream.update(
-          <BotCard>
-            <ShowEvent data={data!} />
-          </BotCard>
-        );
-
-        aiState.done({
-          ...aiState.get(),
-          interactions: [],
-          messages: [
-            ...aiState.get().messages,
-            {
-              id: nanoid(),
-              role: "assistant",
-              content: "Here are the your events:",
-              display: {
-                name: "getEventsFromCalendar",
-                props: {
-                  events: data,
-                },
-              },
-            },
-          ],
-        });
-      } else if (toolName === "scheduleMeeting") {
-        const {
-          description,
-          endTime,
-          startTime,
-          summary,
-          attendees,
-          location,
-        } = args;
-
-        console.log({
-          description,
-          endTime,
-          startTime,
-          summary,
-          attendees,
-          location,
-        });
-        const { data } = await scheduleEventToCalendar({
-          endTime,
-          startTime,
-          summary,
-          description,
-          location,
-          attendees,
-        });
-        console.log({ data });
-        uiStream.update(
-          <BotCard>
-            <CreatedEvent data={data!} />
-          </BotCard>
-        );
-
-        aiState.done({
-          ...aiState.get(),
-          interactions: [],
-          messages: [
-            ...aiState.get().messages,
-            {
-              id: nanoid(),
-              role: "assistant",
-              content: "Here is the new added event for you.",
-              display: {
-                name: "scheduleMeeting",
-                props: {
-                  startTime,
-                  endTime,
-                  summary,
-                  description,
-                  location,
-                },
-              },
-            },
-          ],
-        });
+    messages: aiState.get().messages,
+  })
+    .then(async ({ textStream }) => {
+      for await (const textPart of textStream) {
+        if (textPart) {
+          textContent += textPart;
+          stream.update(textContent);
+        }
       }
-    }
-  }
-  uiStream.done();
-  textStream.done();
-  messageStream.done();
+    })
+    .finally(() => {
+      stream.done();
+    });
+
+  // for await (const delta of result.fullStream) {
+  //   const { type } = delta;
+
+  //   if (type === "text-delta") {
+  //     const { textDelta } = delta;
+
+  //     textContent += textDelta;
+  //     uiStream.update(
+  //       <BotCard>
+  //         <StaticBotMessage message={textContent} />
+  //       </BotCard>
+  //     );
+
+  //     aiState.update({
+  //       ...aiState.get(),
+  //       messages: [
+  //         ...aiState.get().messages,
+  //         {
+  //           id: nanoid(),
+  //           role: "assistant",
+  //           content: textContent,
+  //         },
+  //       ],
+  //     });
+  //   }
+  // }
+
+  // uiStream.done();
 
   return {
-    spinner: spinnerStream.value,
-    display: messageStream.value,
+    answer: textContent,
   };
 }
 

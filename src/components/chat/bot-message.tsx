@@ -18,42 +18,25 @@ export const BotMessage: React.FC<BotMessageProps> = ({ message }) => {
 
   if (!data) return;
   return (
-    <div
-      className={
-        "w-fit grid grid-cols-1 gap-2 border-2 font-medium text-sm leading-5 border-[#F0F6FA] text-[#5B8989] bg-[#F0F6FA] py-2.5 px-4 rounded-xl rounded-ss-none whitespace-pre-wrap"
-      }
-    >
-      <MemoizedReactMarkdown
-        className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0"
-        components={{
-          li: ({ children }) => <li className="list-disc ml-4">{children}</li>,
-          h1: ({ children }) => (
-            <h1 className="text-xl font-bold">{children}</h1>
-          ),
-          h2: ({ children }) => (
-            <h2 className="text-lg font-bold">{children}</h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="text-base font-bold">{children}</h3>
-          ),
-          blockquote: ({ children }) => (
-            <blockquote className="italic bg-white px-4 rounded-md">
-              {children}
-            </blockquote>
-          ),
-        }}
-      >
-        {data}
-      </MemoizedReactMarkdown>
-    </div>
+    <BotCard>
+      <BotMarkdownMessage>{data}</BotMarkdownMessage>
+    </BotCard>
   );
 };
 
 export const StaticBotMessage = ({ message }: { message: string }) => {
   return (
+    <BotCard>
+      <BotMarkdownMessage>{message}</BotMarkdownMessage>
+    </BotCard>
+  );
+};
+
+const BotMarkdownMessage = ({ children }: { children: any }) => {
+  return (
     <div
       className={
-        "w-fit grid grid-cols-1 gap-2 border-2 font-medium text-sm leading-5 border-[#F0F6FA] text-[#5B8989] bg-[#F0F6FA] py-2.5 px-4 rounded-xl rounded-ss-none"
+        "w-fit grid grid-cols-1 gap-2 border-2 font-medium text-sm leading-5 border-[#F0F6FA] text-[#5B8989] bg-[#F0F6FA] py-1 px-4 rounded-xl rounded-ss-none"
       }
     >
       <MemoizedReactMarkdown
@@ -91,7 +74,7 @@ export const StaticBotMessage = ({ message }: { message: string }) => {
           p: ({ children }) => <p className="my-2">{children}</p>,
         }}
       >
-        {message}
+        {children}
       </MemoizedReactMarkdown>
     </div>
   );

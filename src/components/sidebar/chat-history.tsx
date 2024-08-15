@@ -19,7 +19,7 @@ export default function ChatHistory({
       <div className="flex items-center justify-between">
         <h3 className="font-medium">Chat History</h3>
         <Link
-          href={`/${user.username}/chat`}
+          href={`/${user.username}/`}
           className={cn(buttonVariants({ variant: "ghost", size: "icon" }))}
         >
           <PlusIcon className="h-4 w-4" />

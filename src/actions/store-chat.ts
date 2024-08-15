@@ -20,7 +20,7 @@ export const storeChat = async ({ messages, chat_id }: StoreChats) => {
   const stringDate = new Date(createdAt);
   const path = `/${session.user?.username}/${id}`;
 
-  const res = await db.chats.upsert({
+  await db.chats.upsert({
     where: { id },
     create: {
       id,
