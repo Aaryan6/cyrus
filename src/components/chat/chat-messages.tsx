@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import { UIState } from "@/actions/chat/chat.actions";
+import { SpinnerMessage } from "./bot-message";
 
 export interface ChatMessageProps {
   messages: UIState;
@@ -22,7 +23,10 @@ export function ChatMessage({ messages }: ChatMessageProps) {
       {messages.map((message, index: number) => {
         return (
           <div key={message?.id ?? index}>
-            <div className="">{message?.display}</div>
+            <div className="">
+              {message?.spinner}
+              {message?.display}
+            </div>
           </div>
         );
       })}

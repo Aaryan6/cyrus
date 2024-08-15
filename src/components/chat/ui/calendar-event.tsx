@@ -5,6 +5,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getFormattedDate,
@@ -15,7 +20,9 @@ import {
   BotIcon,
   CalendarIcon,
   ChevronDown,
+  ChevronUp,
   ClockIcon,
+  CopyIcon,
   ListIcon,
 } from "lucide-react";
 import { useState } from "react";
@@ -123,9 +130,25 @@ export function CalendarEvents({ data }: EventsListProps) {
 }
 
 export const CalendarCard = ({ data }: { data: SingleEvent }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const copyToClipboard = (text: any) => {
+    navigator.clipboard.writeText(text);
+  };
   return (
     <Card className="w-full max-w-md bg-muted text-foreground">
-      <CardContent className="space-y-4 py-4">
+      <div className="flex flex-row items-center justify-between px-6 py-3">
+        <span
+          onClick={() => copyToClipboard(data?.id)}
+          className="text-xs text-muted-foreground py-0 cursor-pointer"
+        >
+          {data?.id}
+        </span>
+        <CopyIcon
+          onClick={() => copyToClipboard(data?.id)}
+          className="w-3 h-3 cursor-pointer active:text-muted-foreground"
+        />
+      </div>
+      <CardContent className="space-y-4 pb-4">
         <div className="flex items-center space-x-4">
           <CalendarSVG />
           <div>
@@ -142,10 +165,17 @@ export const CalendarCard = ({ data }: { data: SingleEvent }) => {
           </div>
         </div>
         <div className="flex items-start justify-between">
-          <Collapsible className="">
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <ChevronDown className="w-4 h-4" />
+          <Collapsible open={isExpanded} className="">
+            <CollapsibleTrigger
+              onClick={() => setIsExpanded(!isExpanded)}
+              asChild
+            >
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground cursor-pointer">
+                {!isExpanded ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronUp className="w-4 h-4 mb-1" />
+                )}
                 <span>Details</span>
               </div>
             </CollapsibleTrigger>

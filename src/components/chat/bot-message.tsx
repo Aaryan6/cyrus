@@ -121,7 +121,7 @@ export function SpinnerMessage() {
         <div className="bg-foreground border border-primary w-8 h-8 rounded-full grid place-items-center">
           <BotIcon size={18} className="text-muted" />
         </div>
-        {spinner}
+        <div className="p-1.5">{spinner}</div>
       </div>
     </div>
   );

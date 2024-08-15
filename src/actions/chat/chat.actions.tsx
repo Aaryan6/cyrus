@@ -8,7 +8,11 @@ import {
 } from "ai/rsc";
 import { Answer } from "@/actions/chat/chat.answer";
 import { UserMessage } from "@/components/chat/user-message";
-import { BotCard, StaticBotMessage } from "@/components/chat/bot-message";
+import {
+  BotCard,
+  SpinnerMessage,
+  StaticBotMessage,
+} from "@/components/chat/bot-message";
 import { storeChat } from "@/actions/store-chat";
 import { nanoid } from "@/lib/utils";
 import {
@@ -21,6 +25,7 @@ async function submit(input: string, id: string) {
 
   const aiState = getMutableAIState();
   const uiStream = createStreamableUI();
+  const spinnerStream = createStreamableUI(<SpinnerMessage />);
 
   if (input) {
     aiState.update({
@@ -40,6 +45,7 @@ async function submit(input: string, id: string) {
     await Answer({
       aiState,
       uiStream,
+      spinnerStream,
     });
 
     uiStream.done();
@@ -49,6 +55,7 @@ async function submit(input: string, id: string) {
   return {
     id: nanoid(),
     display: uiStream.value,
+    spinner: spinnerStream.value,
   };
 }
 
@@ -68,6 +75,7 @@ export type AIState = {
 export type UIState = {
   id: string;
   display: React.ReactNode;
+  spinner?: React.ReactNode;
 }[];
 
 export interface Chat extends Record<string, any> {

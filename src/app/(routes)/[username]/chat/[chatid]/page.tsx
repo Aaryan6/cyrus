@@ -11,8 +11,6 @@ export default async function ChatPage({
 }) {
   const chats = await getChats(chatid);
   const user = await currentUser();
-  console.log(chats);
-
   if (user?.username !== username) redirect("/");
   return (
     <AI

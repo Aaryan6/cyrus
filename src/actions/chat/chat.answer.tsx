@@ -5,14 +5,20 @@ import {
   createStreamableValue,
   getMutableAIState,
 } from "ai/rsc";
-import { BotCard, BotMessage } from "@/components/chat/bot-message";
+import {
+  BotCard,
+  BotMessage,
+  SpinnerMessage,
+} from "@/components/chat/bot-message";
 import {
   CalendarCard,
   CalendarEvents,
 } from "@/components/chat/ui/calendar-event";
 import {
+  deleteEventsFromCalendar,
   getEventsFromCalendar,
   scheduleEventToCalendar,
+  updateEventsFromCalendar,
 } from "@/lib/actions/calendar";
 import { nanoid } from "@/lib/utils";
 import { z } from "zod";
@@ -20,9 +26,10 @@ import { z } from "zod";
 type Props = {
   aiState: ReturnType<typeof getMutableAIState>;
   uiStream: ReturnType<typeof createStreamableUI>;
+  spinnerStream: ReturnType<typeof createStreamableUI>;
 };
 
-export async function Answer({ aiState, uiStream }: Props) {
+export async function Answer({ aiState, uiStream, spinnerStream }: Props) {
   const stream = createStreamableValue();
 
   uiStream.append(<BotMessage message={stream.value} />);
@@ -34,6 +41,8 @@ export async function Answer({ aiState, uiStream }: Props) {
     
     - If the user request to add an event to the calendar then use the tool \`scheduleMeeting\` to add the event.
     - If the user request to get the events from the calendar then use the tool \`getEventsFromCalendar\` to get the events.
+    - If the user request to update the event from the calendar then use the tool \`updateEventFromCalendar\` to update the event.
+    - If the user request to delete the event from the calendar then use the tool \`deleteEventFromCalendar\` to delete the event.
     
     Besides that, you can also chat with users.`,
     messages: aiState.get().messages,
@@ -64,29 +73,61 @@ export async function Answer({ aiState, uiStream }: Props) {
         }),
       },
       getEventsFromCalendar: {
-        description: `Get events from the calendar, if the user wants to know about the events then use this tool. if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
+        description: `Get events from the calendar, if the user wants to know about the events then use this tool. for the date context today date time is ${new Date()}`,
         parameters: z.object({
           question: z.string().describe("the users question"),
+        }),
+      },
+      updateEventFromCalendar: {
+        description: `update the event from the calendar with user permission, for the date context today date time is ${new Date()}`,
+        parameters: z.object({
+          question: z.string().describe("the users question"),
+          eventId: z.string().describe("the event id to delete"),
+          summary: z.string().optional().describe("the title of the event"),
+          startTime: z
+            .string()
+            .optional()
+            .describe("the start time of the event"),
+          endTime: z.string().optional().describe("the end time of the event"),
+          description: z
+            .string()
+            .optional()
+            .describe("the description of the event"),
+          location: z.string().optional().describe("the location of the event"),
+          attendees: z
+            .array(z.object({ email: z.string() }))
+            .optional()
+            .describe("the attendees of the event"),
+        }),
+      },
+      deleteEventsFromCalendar: {
+        description: `delete the events from the calendar with user permission, if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
+        parameters: z.object({
+          question: z.string().describe("the users question"),
+          eventId: z.string().describe("the event id to delete"),
         }),
       },
     },
   })
     .then(async ({ fullStream }) => {
+      spinnerStream.done(null);
       for await (const delta of fullStream) {
         const { type } = delta;
 
-        if (type === "finish") {
-          aiState.done({
-            ...aiState.get(),
-            messages: [
-              ...aiState.get().messages,
-              {
-                id: nanoid(),
-                role: "assistant",
-                content: textContent,
-              },
-            ],
-          });
+        if (textContent.length > 0) {
+          if (type === "finish") {
+            aiState.done({
+              ...aiState.get(),
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: "assistant",
+                  content: textContent,
+                },
+              ],
+            });
+          }
         }
 
         if (type === "text-delta") {
@@ -165,6 +206,82 @@ export async function Answer({ aiState, uiStream }: Props) {
                     name: "getEventsFromCalendar",
                     props: {
                       events: data,
+                    },
+                  },
+                },
+              ],
+            });
+          } else if (toolName === "updateEventFromCalendar") {
+            const {
+              eventId,
+              attendees,
+              description,
+              endTime,
+              location,
+              startTime,
+              summary,
+            } = args;
+            const { data } = await updateEventsFromCalendar({
+              eventId,
+              endTime,
+              startTime,
+              attendees,
+              description,
+              location,
+              summary,
+            });
+
+            uiStream.update(
+              <BotCard>
+                <CalendarCard data={data!} />
+              </BotCard>
+            );
+
+            aiState.done({
+              ...aiState.get(),
+              interactions: [],
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: "assistant",
+                  content: "Here is the updated event.",
+                  display: {
+                    name: "updateEventFromCalendar",
+                    props: {
+                      startTime,
+                      endTime,
+                      summary,
+                      description,
+                      location,
+                      attendees,
+                      eventId,
+                    },
+                  },
+                },
+              ],
+            });
+          } else if (toolName === "deleteEventsFromCalendar") {
+            const { eventId } = args;
+            const { data } = await deleteEventsFromCalendar({ eventId });
+            uiStream.update(
+              <BotCard>
+                <CalendarCard data={data!} />
+              </BotCard>
+            );
+            aiState.done({
+              ...aiState.get(),
+              interactions: [],
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: "assistant",
+                  content: "Here is the deleted event.",
+                  display: {
+                    name: "deleteEventsFromCalendar",
+                    props: {
+                      eventId,
                     },
                   },
                 },

@@ -184,7 +184,7 @@ export async function deleteEventsFromCalendar({
       eventId,
     });
 
-    return { data: event };
+    return { data: event.data };
   } catch (error) {
     console.log(error);
     return {
@@ -200,15 +200,16 @@ export async function updateEventsFromCalendar({
   description,
   attendees,
   location,
+  summary,
 }: {
   eventId: string;
   startTime?: string;
   endTime?: string;
   description?: string;
   location?: string;
+  summary?: string;
   attendees?: { email: string }[];
 }) {
-  const id = nanoid();
   try {
     const user = await currentUser();
     if (!user?.access_token) {
@@ -239,6 +240,7 @@ export async function updateEventsFromCalendar({
       calendarId: "primary",
       eventId,
       requestBody: {
+        summary: summary || currentEvent.data.summary,
         start: {
           dateTime: startTime
             ? formatForGoogleCalendar(startTime)
@@ -257,7 +259,7 @@ export async function updateEventsFromCalendar({
       },
     });
 
-    return { data: event };
+    return { data: event.data };
   } catch (error) {
     console.log(error);
     return {
