@@ -1,5 +1,5 @@
 "use server";
-import { CoreMessage, streamText } from "ai";
+import { CoreMessage, generateId } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import {
   createStreamableUI,
@@ -7,8 +7,11 @@ import {
   getMutableAIState,
   streamUI,
 } from "ai/rsc";
-import { BotMessage, StaticBotMessage } from "@/components/chat/bot-message";
-import { openai } from "@ai-sdk/openai";
+import {
+  BotCard,
+  BotMessage,
+  TokenErrorMessage,
+} from "@/components/chat/bot-message";
 import { z } from "zod";
 import { createResource } from "@/lib/actions/resources";
 import { findRelevantContent } from "@/lib/ai/embedding";
@@ -16,17 +19,17 @@ import {
   addEventToCalendar,
   deleteEventsFromCalendar,
   getEventsFromCalendar,
+  scheduleEventToCalendar,
   updateEventsFromCalendar,
 } from "@/lib/actions/calendar";
-import { currentUser } from "@/hooks/use-current-user";
 import { nanoid } from "@/lib/utils";
 import {
-  EventsListProps,
+  CreatedEvent,
   ShowEvent,
+  UIStreamingMessage,
 } from "@/components/chat/ui/calendar-event";
 
 type Props = {
-  uiStream: ReturnType<typeof createStreamableUI>;
   messages: CoreMessage[];
   history: ReturnType<typeof getMutableAIState>;
 };
@@ -35,18 +38,30 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY!,
 });
 
-export async function Answer({ uiStream, messages, history }: Props) {
-  const user = await currentUser();
-  const stream = createStreamableValue();
-
-  uiStream.append(<BotMessage message={stream.value} />);
+export async function Answer({ messages, history }: Props) {
+  let textStream: undefined | ReturnType<typeof createStreamableValue<string>>;
+  let textNode: undefined | React.ReactNode;
 
   const result = await streamUI({
     model: google("models/gemini-1.5-flash-latest"),
-    system: `You are a helpful friendly assistant. Chat with the user, talk like little witty. Try to be helpful and informative. Check your knowledge base before answering any questions, if you not be able to found in the tool calls, respond, "Sorry, I don't know."`,
-    text: ({ content, done }) => {
-      stream.append(content);
+    system: `You are a helpful friendly assistant, your name is Jinn. Chat with the user & talk like little witty.
+    
+    - If the user request to add an event to the calendar then use the tool \`schedule_meeting\` to add the event.
+    - If the user request to get the events from the calendar then use the tool \`get_events_from_calendar\` to get the events.
+    
+    Besides that, you can also chat with users.`,
+    text: ({ content, done, delta }) => {
+      if (!textStream) {
+        textStream = createStreamableValue("");
+        textNode = (
+          <BotCard>
+            <BotMessage message={textStream.value} />
+          </BotCard>
+        );
+      }
+
       if (done) {
+        textStream.done(content);
         history.done({
           ...history.get(),
           messages: [
@@ -58,58 +73,47 @@ export async function Answer({ uiStream, messages, history }: Props) {
             },
           ],
         });
+      } else {
+        textStream.append(delta);
       }
 
-      return <StaticBotMessage message={content} />;
+      return textNode;
     },
     tools: {
-      addResource: {
-        description: `Add a resource to your knowledge base if the information is important or can be used in future. If the user provides any information about him then use this tool without asking for confirmation. and if the information is casually and not important for future then don't add it to the knowledge base.`,
+      scheduleMeeting: {
+        description: `Use this tool to schedule the meeting on the calendar, ask user for information at least required information. for the date context today date time is ${new Date()}`,
         parameters: z.object({
-          content: z
+          description: z.string().describe("the description of the meeting"),
+          startTime: z
             .string()
-            .describe("the content or resource to add to the knowledge base"),
-        }),
-        generate: async ({ content }) => {
-          const res = createResource({ content, userId: user?.id! });
-          return <div className=""></div>;
-        },
-      },
-      getInformation: {
-        description: `Check the information from your knowledge base before giving the answer, called this function when user talk about him & ask for information.`,
-        parameters: z.object({
-          question: z.string().describe("the users question"),
-        }),
-        generate: async ({ question }) => {
-          const res = findRelevantContent({
-            userQuery: question,
-            userId: user?.id!,
-          });
-          return <div className=""></div>;
-        },
-      },
-      addEventToCalendar: {
-        description: `Add an event to the calendar, if the user provides any information about the event then use this tool with confirmation of user. if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
-        parameters: z.object({
-          description: z.string().describe("the description of the event"),
-          startTime: z.string().describe("the start time of the event"),
-          endTime: z.string().describe("the end time of the event"),
-          summary: z.string().optional().describe("the summary of the event"),
-          location: z.string().optional().describe("the location of the event"),
+            .describe(
+              `the start time of the event in the format of ${new Date().toISOString()}`
+            ),
+          endTime: z
+            .string()
+            .describe(
+              `the start time of the event in the format of ${new Date().toISOString()}`
+            ),
+          summary: z.string().describe("the title of the meeting"),
+          location: z
+            .string()
+            .optional()
+            .describe("the location of the meeting"),
           attendees: z
             .array(z.object({ email: z.string() }))
             .optional()
             .describe("the attendees of the event"),
         }),
-        generate: async ({
+        generate: async function* ({
           description,
           startTime,
           attendees,
           endTime,
           location,
           summary,
-        }) => {
-          const res = await addEventToCalendar({
+        }) {
+          yield <UIStreamingMessage />;
+          const { data, error } = await scheduleEventToCalendar({
             description,
             startTime,
             attendees,
@@ -117,7 +121,50 @@ export async function Answer({ uiStream, messages, history }: Props) {
             location,
             summary,
           });
-          return <div className=""></div>;
+          if (error) {
+            return <div className="text-red-500">{error}</div>;
+          }
+
+          const toolCallId = generateId();
+
+          history.done({
+            ...history.get(),
+            messages: [
+              ...history.get().messages,
+              {
+                id: generateId(),
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolName: "scheduleMeeting",
+                    toolCallId,
+                    arg: {
+                      description,
+                      startTime,
+                      attendees,
+                      endTime,
+                      location,
+                      summary,
+                    },
+                  },
+                ],
+              },
+              {
+                id: generateId(),
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-result",
+                    toolName: "scheduleMeeting",
+                    toolCallId,
+                    result: data,
+                  },
+                ],
+              },
+            ],
+          });
+          return <CreatedEvent data={data!} />;
         },
       },
       getEventsFromCalendar: {
@@ -125,26 +172,104 @@ export async function Answer({ uiStream, messages, history }: Props) {
         parameters: z.object({
           question: z.string().describe("the users question"),
         }),
-        generate: async () => {
+        generate: async function* () {
+          yield <UIStreamingMessage />;
+
           const { data, error } = await getEventsFromCalendar();
+
+          console.log({ data });
+          const toolCallId = generateId();
+
+          history.done({
+            ...history.get(),
+            messages: [
+              ...history.get().messages,
+              {
+                id: generateId(),
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolName: "getEventsFromCalendar",
+                    toolCallId,
+                    arg: {},
+                  },
+                ],
+              },
+              {
+                id: generateId(),
+                role: "tool",
+                content: [
+                  {
+                    type: "tool-result",
+                    toolName: "scheduleMeeting",
+                    toolCallId,
+                    result: data,
+                  },
+                ],
+              },
+            ],
+          });
           if (error) {
-            return <div className="text-red-500">{error}</div>;
+            return (
+              <BotCard>
+                <TokenErrorMessage message={error} />
+              </BotCard>
+            );
           }
           return <ShowEvent data={data!} />;
         },
       },
-      deleteEventsFromCalendar: {
-        description: `delete the events from the calendar with user permission, if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
+    },
+    messages: messages,
+  });
+
+  return result.value;
+}
+
+// TODO: tools to add
+/**
+       addEventToCalendar: {
+        description: `Use this tool to add an event or reminder on the calendar, ask user for information at least required information. for the date context today date time is ${new Date()}`,
         parameters: z.object({
-          question: z.string().describe("the users question"),
-          eventId: z.string().describe("the event id to delete"),
+          description: z.string().describe("the description of the event"),
+          startTime: z
+            .string()
+            .describe(
+              `the start time of the event in the format of ${new Date().toISOString()}`
+            ),
+          endTime: z
+            .string()
+            .describe(
+              `the start time of the event in the format of ${new Date().toISOString()}`
+            ),
+          summary: z.string().describe("the title of the event"),
+          location: z.string().optional().describe("the location of the event"),
         }),
-        generate: async ({ eventId }) => {
-          const res = await deleteEventsFromCalendar({ eventId });
-          return <div className=""></div>;
+        generate: async function* ({
+          description,
+          startTime,
+          endTime,
+          location,
+          summary,
+        }) {
+          yield <UIStreamingMessage />;
+          const { data, error } = await addEventToCalendar({
+            description,
+            startTime,
+            endTime,
+            location,
+            summary,
+          });
+          console.log(data);
+          if (error) {
+            return <div className="text-red-500">{error}</div>;
+          }
+          return <CreatedEvent data={data!} />;
         },
       },
-      updateEventsFromCalendar: {
+
+        updateEventsFromCalendar: {
         description: `update the events from the calendar with user permission, if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
         parameters: z.object({
           question: z.string().describe("the users question"),
@@ -183,9 +308,42 @@ export async function Answer({ uiStream, messages, history }: Props) {
           return <div className=""></div>;
         },
       },
-    },
-    messages: messages,
-  });
 
-  return result.value;
-}
+      deleteEventsFromCalendar: {
+        description: `delete the events from the calendar with user permission, if user is not defining the month and year then use current month ${new Date().getMonth()} and current year is ${new Date().getFullYear()}`,
+        parameters: z.object({
+          question: z.string().describe("the users question"),
+          eventId: z.string().describe("the event id to delete"),
+        }),
+        generate: async ({ eventId }) => {
+          const res = await deleteEventsFromCalendar({ eventId });
+          return <div className=""></div>;
+        },
+      },
+
+            addResource: {
+        description: `Add a resource to your knowledge base if the information is important or can be used in future. If the user provides any information about him then use this tool without asking for confirmation. and if the information is casually and not important for future then don't add it to the knowledge base.`,
+        parameters: z.object({
+          content: z
+            .string()
+            .describe("the content or resource to add to the knowledge base"),
+        }),
+        generate: async ({ content }) => {
+          const res = createResource({ content, userId: user?.id! });
+          return <div className=""></div>;
+        },
+      },
+      getInformation: {
+        description: `Check the information from your knowledge base before giving the answer, called this function when user talk about him & ask for information.`,
+        parameters: z.object({
+          question: z.string().describe("the users question"),
+        }),
+        generate: async ({ question }) => {
+          const res = findRelevantContent({
+            userQuery: question,
+            userId: user?.id!,
+          });
+          return <div className=""></div>;
+        },
+      },
+ */

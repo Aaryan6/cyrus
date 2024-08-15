@@ -1,48 +1,44 @@
-import { Paperclip, Plus, SendIcon } from "lucide-react";
+import { Forward, Paperclip, Plus, SendIcon } from "lucide-react";
 import { Button, buttonVariants } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { ChangeEvent, useEffect, useRef } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn, nanoid } from "@/lib/utils";
+import { PromptOptions } from "./prompt-options";
+import { AI } from "@/actions/chat.actions";
+import { useActions, useUIState } from "ai/rsc";
+import { generateId } from "ai";
+import { UserMessage } from "./user-message";
 
-type Props = {
-  input: string;
-  handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleSubmit: (
-    e: React.FormEvent<HTMLFormElement>,
-    { options }?: any
-  ) => void;
-  files: FileList | undefined;
-  setFiles: React.Dispatch<React.SetStateAction<FileList | undefined>>;
-  fileInputRef: React.RefObject<HTMLInputElement>;
-};
-
-export default function PromptBox({
-  input,
-  handleInputChange,
-  handleSubmit,
-  fileInputRef,
-  files,
-  setFiles,
-}: Props) {
+export default function PromptBox({ chatId }: { chatId: string }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const pathname = usePathname();
-  const newId = nanoid();
+  const [_, setConversation] = useUIState<typeof AI>();
+  const { submit } = useActions();
+  const [input, setInput] = useState<string>("");
+
+  const handleSubmit = async () => {
+    let msg = input.trim();
+    setInput("");
+    setConversation((currentConversation) => [
+      ...currentConversation,
+      {
+        id: generateId(),
+        role: "user",
+        display: <UserMessage message={msg} />,
+      },
+    ]);
+    const message = await submit(msg, chatId);
+
+    setConversation((currentConversation) => [...currentConversation, message]);
+  };
 
   const handleKeyDown = (e: any) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e, {
-        experimental_attachments: files,
-      });
-      setFiles(undefined);
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      handleSubmit();
     }
   };
 
@@ -58,33 +54,16 @@ export default function PromptBox({
   useEffect(() => {
     adjustHeight();
   }, []);
-
-  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    adjustHeight();
-  };
   return (
     <div className="px-10 py-4 absolute bottom-0 inset-x-0 w-full max-w-4xl mx-auto">
-      <form
-        onSubmit={(event) => {
-          handleSubmit(event, {
-            experimental_attachments: files,
-          });
-
-          setFiles(undefined);
-
-          if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-          }
-        }}
-        className="relative bg-muted rounded-md"
-      >
+      <form onSubmit={handleSubmit} className="relative bg-muted rounded-xl">
         <Textarea
-          className="w-full resize-none max-h-44 rounded-md focus:outline-none focus:ring-2 focus:ring-muted dark:focus:ring-muted px-4 bg-transparent focus-visible:ring-offset-0"
+          className="w-full resize-none max-h-44 rounded-xl focus:outline-none focus:ring-2 focus:ring-muted dark:focus:ring-muted px-4 bg-transparent focus-visible:ring-offset-0"
           placeholder="Type your message..."
           value={input}
           onChange={(e) => {
-            handleInputChange(e);
-            handleChange(e);
+            setInput(e.target.value);
+            adjustHeight();
           }}
           spellCheck={true}
           onKeyDown={handleKeyDown}
@@ -94,7 +73,7 @@ export default function PromptBox({
           data-enable-grammarly="false"
         />
         <div className="absolute bottom-0 rounded-lg -left-10 grid gap-1">
-          <Link
+          {/* <Link
             href={`/${pathname.split("/")[1]}/${newId}}`}
             className={cn(
               buttonVariants({ variant: "ghost", size: "icon" }),
@@ -102,7 +81,8 @@ export default function PromptBox({
             )}
           >
             <Plus size={18} />
-          </Link>
+          </Link> */}
+          <PromptOptions />
           <Label
             htmlFor="file"
             className={cn(
@@ -112,37 +92,14 @@ export default function PromptBox({
           >
             <Paperclip size={16} />
           </Label>
-          <p>
-            {files &&
-              Array.from(files)
-                .map(
-                  (file) =>
-                    file.name.substring(0, 12) +
-                    "..." +
-                    file.name.substring(file.name.length - 6)
-                )
-                .join(",")}
-          </p>
         </div>
-        <Input
-          type="file"
-          className="absolute top-5 left-5 w-fit hidden"
-          onChange={(event) => {
-            if (event.target.files) {
-              setFiles(event.target.files);
-            }
-          }}
-          id="file"
-          multiple
-          ref={fileInputRef}
-        />
         <Button
-          className="absolute top-1/2 right-3 -translate-y-1/2 hover:bg-background focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
-          size="icon"
+          className="absolute -bottom-2 right-2 px-2 h-8 -translate-y-1/2 bg-foreground hover:text-background hover:bg-foreground/80 text-background focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-100"
+          size="sm"
           type="submit"
           variant="ghost"
         >
-          <SendIcon className="h-5 w-5" />
+          <Forward className="h-5 w-5" />
         </Button>
       </form>
     </div>

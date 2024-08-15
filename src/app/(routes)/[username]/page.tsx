@@ -1,4 +1,3 @@
-import { nanoid } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
 export default function PersonalisePage({
@@ -6,6 +5,5 @@ export default function PersonalisePage({
 }: {
   params: { username: string };
 }) {
-  const id = nanoid();
-  redirect(`/${username}/${id}`);
+  redirect(`/${username}/chat`);
 }

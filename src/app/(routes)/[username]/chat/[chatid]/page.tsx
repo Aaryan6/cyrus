@@ -1,3 +1,4 @@
+import { AI } from "@/actions/chat.actions";
 import { getChats } from "@/actions/chats.server";
 import { Chat } from "@/components/chat/chat";
 import { currentUser } from "@/hooks/use-current-user";
@@ -10,10 +11,22 @@ export default async function ChatPage({
 }) {
   const chats = await getChats(chatid);
   const user = await currentUser();
+
   if (user?.username !== username) redirect("/");
   return (
-    <div className="flex-1 flex flex-col">
-      <Chat chatId={chatid} initialMessages={chats?.payload.messages || []} />
-    </div>
+    <AI
+      initialAIState={{
+        chatId: chatid,
+        messages: chats?.messages || [],
+      }}
+    >
+      <div className="flex-1 flex flex-col">
+        <Chat
+          chatId={chatid}
+          initialMessages={chats?.messages || []}
+          username={user.username}
+        />
+      </div>
+    </AI>
   );
 }

@@ -13,33 +13,27 @@ export const storeChat = async ({ messages, chat_id }: StoreChats) => {
   const session = await auth();
   if (session === null || !session.user) return;
 
-  const title = messages[0].content.substring(0, 100);
+  const firstMessage = messages[0].content as string;
+  const title = firstMessage.substring(0, 100);
   const id = chat_id ?? nanoid();
   const createdAt = Date.now();
   const stringDate = new Date(createdAt);
   const path = `/${session.user?.username}/${id}`;
-  const payload = {
-    id,
-    title,
-    user_id: session.user?.id,
-    createdAt,
-    path,
-    messages,
-  };
 
   const res = await db.chats.upsert({
     where: { id },
     create: {
       id,
-      payload,
+      title,
+      messages: messages as any,
+      path,
       userId: session.user.id!,
       updatedAt: stringDate,
       createdAt: stringDate,
     },
     update: {
-      payload,
+      messages: messages as any,
       updatedAt: stringDate,
     },
   });
-  console.log(res);
 };

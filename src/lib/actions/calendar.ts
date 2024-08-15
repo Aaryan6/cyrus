@@ -3,25 +3,16 @@ import { currentUser } from "@/hooks/use-current-user";
 import { google } from "googleapis";
 import { formatForGoogleCalendar } from "../utils";
 import { nanoid } from "nanoid";
+import { AddEventOnCalendar, ScheduleMeetingOnCalendar } from "../types";
 
-const SCOPES = ["https://www.googleapis.com/auth/calendar"];
-
-type EventProps = {
-  summary?: string;
-  location?: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  attendees?: { email: string }[];
-};
-export async function addEventToCalendar({
+export async function scheduleEventToCalendar({
   description,
   startTime,
   attendees,
   endTime,
   location,
   summary,
-}: EventProps) {
+}: ScheduleMeetingOnCalendar) {
   const id = nanoid();
   try {
     const user = await currentUser();
@@ -39,8 +30,6 @@ export async function addEventToCalendar({
     });
 
     const calendar = google.calendar({ version: "v3", auth: OAuth2Client });
-
-    console.log(startTime, endTime);
 
     const event = await calendar.events.insert({
       requestBody: {
@@ -70,7 +59,60 @@ export async function addEventToCalendar({
       conferenceDataVersion: 1,
     });
 
-    return { data: event };
+    return { data: event.data };
+  } catch (error) {
+    console.log(error);
+    return {
+      error: "An error occurred while adding the event to the calendar",
+    };
+  }
+}
+
+export async function addEventToCalendar({
+  description,
+  startTime,
+  endTime,
+  location,
+  summary,
+}: AddEventOnCalendar) {
+  const id = nanoid();
+  try {
+    const user = await currentUser();
+    if (!user) {
+      return { error: "Session is not available" };
+    }
+    const OAuth2Client = new google.auth.OAuth2(
+      process.env.AUTH_GOOGLE_ID,
+      process.env.AUTH_GOOGLE_SECRET
+    );
+
+    OAuth2Client.setCredentials({
+      access_token: user.access_token,
+      refresh_token: user.refresh_token,
+    });
+
+    const calendar = google.calendar({ version: "v3", auth: OAuth2Client });
+
+    const event = await calendar.events.insert({
+      requestBody: {
+        start: {
+          dateTime: formatForGoogleCalendar(startTime),
+          timeZone: "Asia/Kolkata",
+        },
+        end: {
+          dateTime: endTime ? formatForGoogleCalendar(endTime) : null,
+          timeZone: "Asia/Kolkata",
+        },
+        description: description,
+        eventType: "default",
+        summary: summary,
+        location: location,
+      },
+      calendarId: "primary",
+      conferenceDataVersion: 1,
+    });
+
+    return { data: event.data };
   } catch (error) {
     console.log(error);
     return {
@@ -82,6 +124,7 @@ export async function addEventToCalendar({
 export async function getEventsFromCalendar() {
   try {
     const user = await currentUser();
+
     if (!user?.access_token) {
       return { error: "No provider token available" };
     }
@@ -107,7 +150,7 @@ export async function getEventsFromCalendar() {
 
     return { data: event.data };
   } catch (error) {
-    console.log(error);
+    console.log({ error });
     return {
       error: "An error occurred while adding the event to the calendar",
     };

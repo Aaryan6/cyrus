@@ -1,10 +1,8 @@
 "use client";
 
-import { GetUser } from "@/hooks/use-user";
 import ProfileMenu from "../profile-menu";
 
-export default function ProfileBox() {
-  const user = GetUser();
+export default function ProfileBox({ user }: { user: any }) {
   return (
     <div className="space-y-4 mt-6">
       <div className="flex items-center justify-between">

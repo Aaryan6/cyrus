@@ -3,14 +3,9 @@ import { AIMessage } from "@/actions/chat.actions";
 export type Chats = {
   id: string;
   userId: string;
-  payload: {
-    id: string;
-    title: string;
-    user_id: string;
-    createdAt: number;
-    path: string;
-    messages: AIMessage[];
-  };
+  title: string;
+  path: string;
+  messages: AIMessage[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -32,4 +27,21 @@ export type SessionUser = {
   access_token?: string;
   id_token?: string;
   refresh_token?: string;
+};
+
+export type ScheduleMeetingOnCalendar = {
+  summary: string;
+  location?: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  attendees?: { email: string }[];
+};
+
+export type AddEventOnCalendar = {
+  summary: string;
+  location?: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
 };

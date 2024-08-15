@@ -5,6 +5,7 @@ export type ExtendedUser = DefaultSession["user"] & {
   access_token: string;
   refresh_token: string;
   username: string;
+  token_expires: number;
 };
 
 declare module "next-auth" {

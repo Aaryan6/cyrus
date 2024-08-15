@@ -20,14 +20,7 @@ export default function Navbar() {
         >
           <SearchIcon className="h-5 w-5" />
         </Button>
-        <Button
-          className="hover:bg-muted focus:outline-none focus:ring-2 focus:ring-muted"
-          size="icon"
-          variant="ghost"
-        >
-          <SettingsIcon className="h-5 w-5" />
-        </Button>
-        {/* <ThemeToggle /> */}
+        <ThemeToggle />
       </div>
     </header>
   );

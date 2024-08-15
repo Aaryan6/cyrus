@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { nanoid } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -9,7 +8,6 @@ type Props = {
 };
 export default function Hero({ user }: Props) {
   const router = useRouter();
-  const id = nanoid();
 
   return (
     <div className="grid place-content-center">
@@ -19,7 +17,7 @@ export default function Hero({ user }: Props) {
         {user ? (
           <Button
             className="mt-4"
-            onClick={() => router.push(`/${user.username}/${id}`)}
+            onClick={() => router.push(`/${user.username}/chat`)}
           >
             Get Started
           </Button>

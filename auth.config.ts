@@ -4,7 +4,6 @@ import Credentials from "next-auth/providers/credentials";
 import { LoginSchema } from "@/schemas";
 import { getUserByEmail } from "@/actions/user.server";
 import bcrypt from "bcryptjs";
-import { param } from "drizzle-orm";
 
 export default {
   providers: [

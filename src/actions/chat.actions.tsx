@@ -1,34 +1,17 @@
 "use server";
-import {
-  convertToCoreMessages,
-  CoreMessage,
-  Message,
-  streamText,
-  tool,
-} from "ai";
-import {
-  createAI,
-  createStreamableUI,
-  createStreamableValue,
-  getAIState,
-  getMutableAIState,
-  StreamableValue,
-} from "ai/rsc";
+import { CoreMessage } from "ai";
+import { createAI, getAIState, getMutableAIState } from "ai/rsc";
 import { Answer } from "@/actions/chat.answer";
 import { UserMessage } from "@/components/chat/user-message";
-import { BotMessage } from "@/components/chat/bot-message";
+import { BotCard, StaticBotMessage } from "@/components/chat/bot-message";
 import { storeChat } from "@/actions/store-chat";
-import { revalidatePath } from "next/cache";
 import { nanoid } from "@/lib/utils";
-import { currentUser } from "@/hooks/use-current-user";
+import { CreatedEvent, ShowEvent } from "@/components/chat/ui/calendar-event";
 
 async function submit(input: string, id: string) {
   "use server";
 
   const history = getMutableAIState();
-  const stream = createStreamableValue("");
-  const uiStream = createStreamableUI();
-  const user = await currentUser();
 
   const messages: CoreMessage[] = [
     ...history.get().messages,
@@ -53,9 +36,7 @@ async function submit(input: string, id: string) {
     });
   }
 
-  const result = await Answer({ uiStream, messages, history });
-
-  uiStream.done();
+  const result = await Answer({ messages, history });
 
   return {
     id: nanoid(),
@@ -63,9 +44,7 @@ async function submit(input: string, id: string) {
   };
 }
 
-export type AIMessage = {
-  role: "function" | "user" | "assistant" | "system" | "tool" | "data";
-  content: string;
+export type AIMessage = CoreMessage & {
   id: string;
 };
 
@@ -77,8 +56,6 @@ export type AIState = {
 export type UIState = {
   id: string;
   display: React.ReactNode;
-  isGenerating?: StreamableValue<boolean>;
-  suggestions?: React.ReactNode;
 }[];
 
 export interface Chat extends Record<string, any> {
@@ -98,10 +75,10 @@ export const AI = createAI<AIState, UIState>({
     chatId: nanoid(),
     messages: [],
   } as AIState,
-  onGetUIState: async () => {
+  onGetUIState: async (): Promise<UIState | undefined> => {
     "use server";
 
-    const aiState = getAIState();
+    const aiState = getAIState() as Chat;
     if (aiState) {
       const uiState = getUIStateFromAIState(aiState);
       return uiState;
@@ -117,26 +94,45 @@ export const AI = createAI<AIState, UIState>({
   },
 });
 
-export const getUIStateFromAIState = (aiState: Readonly<Chat>) => {
-  return aiState.messages?.map((message) => {
+export const getUIStateFromAIState = (aiState: Chat) => {
+  return aiState?.messages?.map((message) => {
     const { id, role, content } = message;
     switch (role) {
       case "user":
         return {
           id,
-          display: <UserMessage message={content} />,
+          display: <UserMessage message={content as string} />,
         };
       case "assistant":
-        const answer = createStreamableValue();
+        if (typeof content === "string") {
+          return {
+            id,
+            display: (
+              <BotCard>
+                <StaticBotMessage message={content} />
+              </BotCard>
+            ),
+          };
+        } else {
+          return null;
+        }
+      case "tool":
         return {
           id,
-          display: <BotMessage message={answer.value} />,
+          display: content.map((tool) => {
+            return tool.toolName === "scheduleMeeting" ? (
+              <BotCard>
+                <CreatedEvent data={tool.result!} />
+              </BotCard>
+            ) : tool.toolName === "getEventsFromCalendar" ? (
+              <BotCard>
+                <ShowEvent data={tool.result!} />
+              </BotCard>
+            ) : null;
+          }),
         };
       default:
-        return {
-          id,
-          display: <div />,
-        };
+        return null;
     }
-  });
+  }) as UIState;
 };
