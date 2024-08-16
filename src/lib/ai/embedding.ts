@@ -54,24 +54,26 @@ export const findRelevantContent = async ({
   userQuery: string;
   userId: string;
 }) => {
+  console.log({ userQuery, userId });
   const userQueryEmbedded = await generateEmbedding(userQuery);
 
   const similarGuides = await prisma.$queryRaw<
     Array<{ content: string; similarity: number }>
   >`
-  SELECT 
-    content,
-    1 - (embedding <=> ${Prisma.raw(
-      `ARRAY[${userQueryEmbedded.join(",")}]::vector(1536)`
-    )}::vector) AS similarity
-  FROM "Embeddings"
-  WHERE 
-    1 - (embedding <=> ${Prisma.raw(
-      `ARRAY[${userQueryEmbedded.join(",")}]::vector(1536)`
-    )}::vector) > 0.5
-    AND "userId" = ${userId}
-  ORDER BY similarity DESC
-  LIMIT 4
-`;
+    SELECT
+      content,
+      1 - (embedding <=> ${Prisma.raw(
+        `ARRAY[${userQueryEmbedded.join(",")}]::vector(1536)`
+      )}::vector) AS similarity
+    FROM "Embeddings"
+    WHERE
+      1 - (embedding <=> ${Prisma.raw(
+        `ARRAY[${userQueryEmbedded.join(",")}]::vector(1536)`
+      )}::vector) > 0.5
+      AND "userId" = ${userId}
+    ORDER BY similarity DESC
+    LIMIT 4
+  `;
+
   return similarGuides;
 };

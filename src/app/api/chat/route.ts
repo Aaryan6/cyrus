@@ -22,7 +22,10 @@ export async function POST(req: Request) {
 
   const result = await streamText({
     model: openai("gpt-4o-mini"),
-    system: `You are a helpful friendly assistant. Chat with the user, talk like little witty. Try to be helpful and informative. Check your knowledge base before answering any questions, if you not be able to found in the tool calls, respond, "Sorry, I don't know."`,
+    system: `You are a helpful friendly assistant whose name is Jinn. Chat with the user, talk like little witty.
+    Follow these rules:
+    - Check your knowledge base if user ask about himself or something about the past.
+    - If the information is not available in the knowledge base then use the tool 'getInformation' to find the information.`,
     tools: {
       addResource: tool({
         description: `Add a resource to your knowledge base if the information is important or can be used in future. If the user provides any information about him then use this tool without asking for confirmation. and if the information is casually and not important for future then don't add it to the knowledge base.`,
@@ -128,6 +131,7 @@ export async function POST(req: Request) {
     messages: convertToCoreMessages(messages),
     experimental_toolCallStreaming: true,
     async onFinish(event) {
+      console.log({ event });
       const firstMessage = messages[0].content as string;
       const title = firstMessage.substring(0, 100);
       const id = chatId ?? nanoid();
@@ -140,14 +144,30 @@ export async function POST(req: Request) {
         create: {
           id,
           title,
-          messages: messages as any,
+          messages: [
+            ...messages,
+            {
+              id: nanoid(),
+              role: "assistant",
+              content: event.text,
+              createdAt: stringDate,
+            },
+          ] as any,
           path,
           userId: user?.id!,
           updatedAt: stringDate,
           createdAt: stringDate,
         },
         update: {
-          messages: messages as any,
+          messages: [
+            ...messages,
+            {
+              id: nanoid(),
+              role: "assistant",
+              content: event.text,
+              createdAt: stringDate,
+            },
+          ] as any,
           updatedAt: stringDate,
         },
       });

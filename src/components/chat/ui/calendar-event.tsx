@@ -198,6 +198,23 @@ export const CalendarCard = ({ data }: { data: SingleEvent }) => {
   );
 };
 
+export const CalendarDeletedCard = ({ data }: { data: SingleEvent }) => {
+  return (
+    <Card className="w-full max-w-md bg-muted text-foreground">
+      <CardContent className="space-y-4 py-4">
+        <div className="flex items-center space-x-4">
+          <CalendarSVG />
+          <div>
+            <h3 className="text-lg font-semibold">
+              Deleted Event: {data?.summary || "No title"}
+            </h3>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export const UIStreamingMessage = ({ message }: { message?: string }) => {
   return (
     <Card className="w-full max-w-md bg-muted text-foreground">

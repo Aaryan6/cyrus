@@ -19,8 +19,9 @@ import {
   CalendarCard,
   CalendarEvents,
 } from "@/components/chat/ui/calendar-event";
+import { Calendar } from "./chat.calendar";
 
-async function submit(input: string, id: string) {
+async function submitChat(input: string, id: string) {
   "use server";
 
   const aiState = getMutableAIState();
@@ -42,7 +43,56 @@ async function submit(input: string, id: string) {
   }
 
   const processEvents = async () => {
-    await Answer({
+    const { answer } = await Answer({
+      aiState,
+      uiStream,
+      spinnerStream,
+    });
+    aiState.done({
+      ...aiState.get(),
+      messages: [
+        ...aiState.get().messages,
+        {
+          id: nanoid(),
+          role: "assistant",
+          content: answer,
+        },
+      ],
+    });
+    uiStream.done();
+  };
+  processEvents();
+
+  return {
+    id: nanoid(),
+    display: uiStream.value,
+    spinner: spinnerStream.value,
+  };
+}
+
+async function submitCalendar(input: string, id: string) {
+  "use server";
+
+  const aiState = getMutableAIState();
+  const uiStream = createStreamableUI();
+  const spinnerStream = createStreamableUI(<SpinnerMessage />);
+
+  if (input) {
+    aiState.update({
+      chatId: id ?? aiState.get().chatId,
+      messages: [
+        ...aiState.get().messages,
+        {
+          id: nanoid(),
+          role: "user",
+          content: input,
+        },
+      ],
+    });
+  }
+
+  const processEvents = async () => {
+    await Calendar({
       aiState,
       uiStream,
       spinnerStream,
@@ -88,7 +138,8 @@ export interface Chat extends Record<string, any> {
 
 export const AI = createAI<AIState, UIState>({
   actions: {
-    submit,
+    submitChat,
+    submitCalendar,
   },
   initialUIState: [],
   initialAIState: {

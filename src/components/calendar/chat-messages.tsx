@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import { UIState } from "@/actions/chat/chat.actions";
-import { SpinnerMessage } from "./bot-message";
+import { SpinnerMessage } from "../chat/bot-message";
+import { CalendarDeletedCard } from "../chat/ui/calendar-event";
 
 export interface ChatMessageProps {
   messages: UIState;

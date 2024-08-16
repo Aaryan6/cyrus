@@ -12,7 +12,7 @@ export default async function Sidebar() {
     <div className="bg-muted/60 flex flex-col flex-shrink-0 p-4 w-64 h-full border-r border-secondary">
       <div className="space-y-2">
         <SearchBox />
-        <Integrations />
+        <Integrations user={user} />
         <ChatHistory history={history!} user={user} />
       </div>
       <div className="space-y-2">

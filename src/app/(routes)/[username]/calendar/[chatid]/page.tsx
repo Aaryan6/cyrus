@@ -1,6 +1,6 @@
 import { AI } from "@/actions/chat/chat.actions";
 import { getChats } from "@/actions/chat/chats.server";
-import { Chat } from "@/components/chat/chat";
+import { CalendarChat } from "@/components/calendar/chat";
 import { currentUser } from "@/hooks/use-current-user";
 import { redirect } from "next/navigation";
 
@@ -20,11 +20,7 @@ export default async function ChatPage({
       }}
     >
       <div className="flex-1 flex flex-col">
-        <Chat
-          chatId={chatid}
-          username={user.username}
-          initialMessages={chats?.messages || []}
-        />
+        <CalendarChat chatId={chatid} username={user.username} />
       </div>
     </AI>
   );

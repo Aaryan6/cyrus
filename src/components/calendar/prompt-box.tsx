@@ -1,23 +1,22 @@
-import { Forward, Paperclip, Plus, SendIcon } from "lucide-react";
+import { Forward, Paperclip } from "lucide-react";
 import { Button, buttonVariants } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { cn, nanoid } from "@/lib/utils";
-import { PromptOptions } from "./prompt-options";
+import { cn } from "@/lib/utils";
+import { PromptOptions } from "../chat/prompt-options";
 import { AI } from "@/actions/chat/chat.actions";
 import { useActions, useUIState } from "ai/rsc";
 import { generateId } from "ai";
-import { UserMessage } from "./user-message";
+import { UserMessage } from "../chat/user-message";
 
 export default function PromptBox({ chatId }: { chatId: string }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [_, setConversation] = useUIState<typeof AI>();
-  const { submit } = useActions();
+  const { submitChat, submitMeeting } = useActions();
   const [input, setInput] = useState<string>("");
+  const path = usePathname();
 
   const handleSubmit = async () => {
     let msg = input.trim();
@@ -30,9 +29,20 @@ export default function PromptBox({ chatId }: { chatId: string }) {
         display: <UserMessage message={msg} />,
       },
     ]);
-    const message = await submit(msg, chatId);
 
-    setConversation((currentConversation) => [...currentConversation, message]);
+    if (path.includes("chat")) {
+      const message = await submitChat(msg, chatId);
+      setConversation((currentConversation) => [
+        ...currentConversation,
+        message,
+      ]);
+    } else if (path.includes("meet")) {
+      const message = await submitMeeting(msg, chatId);
+      setConversation((currentConversation) => [
+        ...currentConversation,
+        message,
+      ]);
+    }
   };
 
   const handleKeyDown = (e: any) => {
