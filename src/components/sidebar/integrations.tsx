@@ -1,29 +1,37 @@
 "use client";
 
-import { FileTextIcon, CalendarRange } from "lucide-react";
+import { CalendarRange, MessageCircleDashed } from "lucide-react";
 import Link from "next/link";
 
 export default function Integrations({ user }: { user: any }) {
+  const apps = [
+    {
+      name: "Chat",
+      icon: MessageCircleDashed,
+      href: `/${user.username}/`,
+    },
+    {
+      name: "Meeting Schedular",
+      icon: CalendarRange,
+      href: `/${user.username}/calendar`,
+    },
+  ];
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Apps</h3>
       </div>
       <div className="space-y-2">
-        <Link
-          className="flex items-center space-x-2 hover:bg-background rounded-md p-2"
-          href={`/${user.username}/calendar`}
-        >
-          <CalendarRange size={20} />
-          <span>Meeting Schedular</span>
-        </Link>
-        <Link
-          className="flex items-center space-x-2 hover:bg-background rounded-md p-2"
-          href="#"
-        >
-          <FileTextIcon size={20} />
-          <span>Chat with PDF</span>
-        </Link>
+        {apps.map((app, i) => (
+          <Link
+            className="flex items-center gap-2 hover:bg-background rounded-md p-2"
+            href={app.href}
+            key={i}
+          >
+            <app.icon size={16} className="mb-0.5" />
+            <span className="text-[0.9rem]">{app.name}</span>
+          </Link>
+        ))}
       </div>
     </div>
   );

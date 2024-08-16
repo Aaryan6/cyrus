@@ -18,7 +18,7 @@ import { nanoid } from "@/lib/utils";
 import {
   CalendarCard,
   CalendarEvents,
-} from "@/components/chat/ui/calendar-event";
+} from "@/components/calendar/ui/calendar-event";
 import { Calendar } from "./chat.calendar";
 
 async function submitChat(input: string, id: string) {

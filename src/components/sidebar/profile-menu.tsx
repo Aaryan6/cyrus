@@ -1,20 +1,40 @@
 "use client";
 
-import ProfileMenu from "../profile-menu";
+import { signOut } from "@/auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export default function ProfileBox({ user }: { user: any }) {
   return (
-    <div className="space-y-4 mt-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Profile</h3>
-      </div>
-      <div className="flex items-center space-x-4">
-        <ProfileMenu user={user!} />
-        <div className="w-full">
-          <p className="font-medium">{user?.name}</p>
-          {/* <p className="text-muted-foreground text-sm">{user?.email}</p> */}
-        </div>
-      </div>
+    <div className="space-y-4 mt-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger className="focus:outline-0 flex items-center gap-4">
+          <Avatar>
+            <AvatarImage src={user?.image!} />
+            <AvatarFallback>
+              {user?.name
+                ? user?.name?.charAt(0).toUpperCase()
+                : user?.email?.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <h2 className="font-semibold">{user?.name}</h2>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={async () => {
+              await signOut();
+            }}
+          >
+            Logout
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

@@ -14,7 +14,7 @@ import {
   CalendarCard,
   CalendarDeletedCard,
   CalendarEvents,
-} from "@/components/chat/ui/calendar-event";
+} from "@/components/calendar/ui/calendar-event";
 import {
   deleteEventsFromCalendar,
   getEventsFromCalendar,

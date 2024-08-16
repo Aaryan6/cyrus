@@ -1,8 +1,6 @@
 "use client";
 import { AI } from "@/actions/chat/chat.actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -11,14 +9,13 @@ import {
 import { generateId } from "ai";
 import { useActions, useUIState } from "ai/rsc";
 import { Plus } from "lucide-react";
-import { useState } from "react";
-import { UserMessage } from "./user-message";
+import { UserMessage } from "../chat/user-message";
 import { usePathname } from "next/navigation";
 
 type Props = {};
 
 export function PromptOptions({}: Props) {
-  const [conversation, setConversation] = useUIState<typeof AI>();
+  const [_, setConversation] = useUIState<typeof AI>();
   const { submit } = useActions();
   const pathname = usePathname();
   const chatId = pathname.split("/")[2];

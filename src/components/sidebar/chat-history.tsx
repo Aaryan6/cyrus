@@ -15,7 +15,7 @@ export default function ChatHistory({
   user: any;
 }) {
   return (
-    <div className="space-y-4 flex flex-col w-full">
+    <div className="space-y-4 flex flex-col w-full flex-1">
       <div className="flex items-center justify-between">
         <h3 className="font-medium">Chat History</h3>
         <Link
@@ -25,7 +25,7 @@ export default function ChatHistory({
           <PlusIcon className="h-4 w-4" />
         </Link>
       </div>
-      <ScrollArea className="h-[15rem]">
+      <ScrollArea className="flex-1 pb-2">
         {history?.length !== 0 && (
           <div className="space-y-2 w-full">
             {history?.map((chat: Chats, index: number) => {

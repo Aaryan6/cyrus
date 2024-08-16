@@ -5,7 +5,7 @@ import { Label } from "../ui/label";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { PromptOptions } from "../chat/prompt-options";
+import { PromptOptions } from "./prompt-options";
 import { AI } from "@/actions/chat/chat.actions";
 import { useActions, useUIState } from "ai/rsc";
 import { generateId } from "ai";

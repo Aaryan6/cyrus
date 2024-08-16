@@ -109,3 +109,7 @@
     @apply font-heading;
   }
 }
+
+*::-webkit-scrollbar {
+  width: 0;
+}
