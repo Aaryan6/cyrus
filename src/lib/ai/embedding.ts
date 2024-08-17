@@ -54,7 +54,6 @@ export const findRelevantContent = async ({
   userQuery: string;
   userId: string;
 }) => {
-  console.log({ userQuery, userId });
   const userQueryEmbedded = await generateEmbedding(userQuery);
 
   const similarGuides = await prisma.$queryRaw<

@@ -2,12 +2,12 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useChat } from "ai/react";
 import { Textarea } from "../ui/textarea";
 import { Button, buttonVariants } from "../ui/button";
 import { FileSpreadsheet, Forward, Paperclip, Plus } from "lucide-react";
-import { StaticBotMessage } from "./bot-message";
+import { BotLoading, StaticBotMessage } from "./bot-message";
 import { UserMessage } from "./user-message";
 import { cn } from "@/lib/utils";
 import { Label } from "../ui/label";
@@ -23,16 +23,31 @@ type ChatProps = {
 
 export function Chat({ chatId, username, initialMessages }: ChatProps) {
   const path = usePathname();
+  const router = useRouter();
   const bottomScrollRef = useRef<HTMLDivElement>(null);
-  const { handleSubmit, handleInputChange, messages, input } = useChat({
+  const [isLoading, setIsLoading] = useState(false);
+  const {
+    handleSubmit,
+    handleInputChange,
+    messages,
+    input,
+    isLoading: isThinking,
+  } = useChat({
     body: {
       chatId,
     },
     initialMessages: initialMessages || [],
     maxToolRoundtrips: 2,
+    onResponse(response) {
+      if (response?.status == 200) {
+        setIsLoading(false);
+      }
+    },
   });
   const [files, setFiles] = useState<FileList | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  console.log({ chatId });
 
   useEffect(() => {
     if (username) {
@@ -46,6 +61,12 @@ export function Chat({ chatId, username, initialMessages }: ChatProps) {
     bottomScrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (messages.length === 2) {
+      router.refresh();
+    }
+  }, [messages, router]);
+
   const handleKeyDown = (e: any) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -57,11 +78,14 @@ export function Chat({ chatId, username, initialMessages }: ChatProps) {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      setTimeout(() => {
+        setIsLoading(true);
+      }, 1000);
     }
   };
 
   return (
-    <ScrollArea className="h-full w-full flex flex-col px-2">
+    <ScrollArea className="h-full w-full flex flex-col px-2 bg-background">
       <div
         className={cn(
           "mb-4 flex-1 flex flex-col gap-4 max-w-4xl mx-auto pt-10 pb-20"
@@ -106,6 +130,7 @@ export function Chat({ chatId, username, initialMessages }: ChatProps) {
             </div>
           );
         })}
+        {/* {isThinking && me && <BotLoading />} */}
         <div ref={bottomScrollRef} className="pb-12" />
       </div>
       <div className="px-10 py-4 absolute bottom-0 inset-x-0 w-full max-w-4xl mx-auto">
@@ -120,6 +145,9 @@ export function Chat({ chatId, username, initialMessages }: ChatProps) {
             if (fileInputRef.current) {
               fileInputRef.current.value = "";
             }
+            setTimeout(() => {
+              setIsLoading(true);
+            }, 1000);
           }}
           className="relative rounded-xl"
         >
@@ -139,7 +167,7 @@ export function Chat({ chatId, username, initialMessages }: ChatProps) {
           />
           <div className="absolute bottom-1 rounded-lg left-1 grid gap-1 pointer-events-none">
             <Link
-              href={`/${username}`}
+              href={`/${username}/chat`}
               className={cn(
                 buttonVariants({ variant: "ghost", size: "icon" }),
                 "cursor-pointer w-8 h-8 pointer-events-auto"

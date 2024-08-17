@@ -36,7 +36,7 @@ const BotMarkdownMessage = ({ children }: { children: any }) => {
   return (
     <div
       className={
-        "w-fit grid grid-cols-1 gap-2 border-2 font-medium text-sm leading-5 border-[#F0F6FA] text-[#5B8989] bg-[#F0F6FA] py-1 px-4 rounded-xl rounded-ss-none"
+        "w-fit grid grid-cols-1 gap-2 border text-sm leading-5 bg-muted py-1 px-4 rounded-xl rounded-ss-none"
       }
     >
       <MemoizedReactMarkdown
@@ -84,8 +84,8 @@ export const BotCard = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex-1 relative w-full max-w-[80%]">
       <div className="flex w-full justify-start gap-x-2 max-w-4xl mx-auto h-full">
-        <div className="bg-foreground border border-primary w-8 h-8 rounded-full grid place-items-center">
-          <BotIcon size={18} className="text-muted" />
+        <div className="bg-muted border w-8 h-8 rounded-full grid place-items-center">
+          <BotIcon size={18} className="" />
         </div>
         {children}
       </div>
@@ -126,3 +126,23 @@ export function SpinnerMessage() {
     </div>
   );
 }
+
+export const BotLoading = () => {
+  return (
+    <BotCard>
+      <div
+        className={
+          "w-fit flex gap-2 font-medium text-sm leading-5 bg-[#F0F6FA] pt-4 px-4 rounded-xl rounded-ss-none"
+        }
+      >
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-1 h-1 bg-[#5B8989] rounded-full animate-bounce"
+            style={{ animationDelay: `${i * 0.2}s` }}
+          />
+        ))}
+      </div>
+    </BotCard>
+  );
+};

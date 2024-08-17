@@ -11,6 +11,9 @@ export async function getChats(chatId: string) {
 export async function getChatHistory() {
   const session = await auth();
   if (session === null || !session.user) return;
-  const data = await db.chats.findMany({ where: { userId: session.user?.id } });
+  const data = await db.chats.findMany({
+    where: { userId: session.user?.id },
+    orderBy: { createdAt: "desc" },
+  });
   return data as Chats[];
 }

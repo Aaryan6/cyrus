@@ -27,7 +27,7 @@ export const createResource = async ({
       )})`;
     });
 
-    const res = await prisma.$executeRaw`
+    await prisma.$executeRaw`
     INSERT INTO "Embeddings" (id, content, "resourceId", "userId", embedding)
     VALUES ${Prisma.join(values)}
   `;

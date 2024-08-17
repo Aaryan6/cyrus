@@ -131,7 +131,6 @@ export async function POST(req: Request) {
     messages: convertToCoreMessages(messages),
     experimental_toolCallStreaming: true,
     async onFinish(event) {
-      console.log({ event });
       const firstMessage = messages[0].content as string;
       const title = firstMessage.substring(0, 100);
       const id = chatId ?? nanoid();

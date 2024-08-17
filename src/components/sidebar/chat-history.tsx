@@ -1,11 +1,12 @@
 "use client";
 
-import { PlusIcon, ArrowRightCircleIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { buttonVariants } from "../ui/button";
 import { Chats } from "@/lib/types";
 import Link from "next/link";
 import { ScrollArea } from "../ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { ChatHistoryItem } from "./chat-history-item";
 
 export default function ChatHistory({
   history,
@@ -27,19 +28,14 @@ export default function ChatHistory({
       </div>
       <ScrollArea className="flex-1 pb-2">
         {history?.length !== 0 && (
-          <div className="space-y-2 w-full">
+          <div className="space-y-2">
             {history?.map((chat: Chats, index: number) => {
               return (
-                <Link
-                  href={`/${user.username}/chat/${chat.id}`}
+                <ChatHistoryItem
                   key={chat.id ?? index}
-                  className="group flex items-center space-x-2 transition-all duration-300 p-2 rounded-lg bg-muted"
-                >
-                  <ArrowRightCircleIcon className="h-4 w-4 hidden group-hover:inline-block transition duration-700" />
-                  <p className="flex-1 text-wrap line-clamp-1 w-full text-sm">
-                    {chat?.title}
-                  </p>
-                </Link>
+                  chat={chat}
+                  index={index}
+                />
               );
             })}
           </div>
@@ -48,3 +44,14 @@ export default function ChatHistory({
     </div>
   );
 }
+
+// <Link
+//   href={`/${user.username}/chat/${chat.id}`}
+//   key={chat.id ?? index}
+//   className="group flex items-center space-x-2 transition-all duration-300 p-2 rounded-md bg-foreground/5"
+// >
+//   <ArrowRightCircleIcon className="h-4 w-4 hidden group-hover:inline-block transition-all ease-in-out duration-700" />
+//   <p className="flex-1 text-wrap line-clamp-1 w-full text-sm">
+//     {chat?.title}
+//   </p>
+// </Link>
